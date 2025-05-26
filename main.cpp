@@ -6,29 +6,17 @@
  */
 int main(int, char**)
 {
-    DataClass_Init();
-    Display_Init();
-    pre_load(rm);
+    // Launch_Init();    // 启动界面初始化
 
-    root = new BgUi(0, 0, 0, 255);
-    mark_update();
+    DataClass_Init();                                // 初始化底层数据类
+    Display_Init(WINDOW_WIDTH, WINDOW_HEIGHT, 0);    // 初始化显示框架
+    pre_load(rm);                                    // 预加载资源
+    main_page_Init();                                // 初始化主页面
 
-    ImageUi *img = new ImageUi("icon.png", 100, 100);
-    img->join(root);
+    Display_Mainloop();    // 主循环
 
-    TextUi *text = new TextUi("Hello, World!", rm.getFont("deyi.ttf", 32), 255, 0, 0, 255, 700, 200);
-    text->join(root);
-
-    SDL_Color bg = {255, 255, 0, 255};
-    SDL_Color fg = {255, 0, 0, 255};
-    RectUi *rect = new RectUi(200, 80, 4, &bg, &fg);
-    rect->set_rect_center(800, 300);
-    rect->join(root);
-
-    Display_Mainloop();
-
-    delete root;
-    rm.Quit();
-    Display_Quit();
+    delete root;           // 清除创建的显示元素
+    rm.Clean();            // 清理资源
+    Display_Quit();        // 退出显示框架
     return 0;
 }

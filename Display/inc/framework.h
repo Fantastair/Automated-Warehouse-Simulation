@@ -12,11 +12,12 @@ extern SDL_Window *window;
 extern SDL_Renderer *renderer;
 extern TTF_TextEngine *text_engine;
 
-void Display_Init(void);
+void Display_Init(int w, int h, SDL_WindowFlags flags);
 void Display_Quit(void);
 
 void Display_Mainloop(void);
 
+Uint64 fps_clock(void);
 void mark_update(void);
 
 

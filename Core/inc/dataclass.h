@@ -6,7 +6,7 @@
 // 轨道尺寸
 #define TRACKWIDTH             1200     // 轨道宽度，mm
 #define STRIGHT_TRACKLENGTH    40000    // 直轨长度，mm
-#define CURVE_TRACKRADIUS      1200     // 弯轨内径，mm
+#define CURVE_TRACKRADIUS      2500     // 弯轨内径，mm
 // 接口尺寸
 #define CONNECTOR_WIDTH        1100     // 接口宽度，mm
 #define CS_1_LEFTPAD           3250     // 1 号入库接口设备左端距离上直轨左端点长度，mm

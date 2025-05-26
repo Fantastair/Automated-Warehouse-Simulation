@@ -13,13 +13,13 @@ TTF_TextEngine *text_engine = NULL;    // 文本引擎指针
 /**
  * @brief 初始化显示模块
  */
-void Display_Init(void)
+void Display_Init(int w, int h, SDL_WindowFlags flags)
 {
     SDL_Init(SDL_INIT_VIDEO);
     TTF_Init();
 
-    SDL_CreateWindowAndRenderer("自动化仓储仿真", WINDOW_WIDTH, WINDOW_HEIGHT, 0, &window, &renderer);
-    SDL_SetRenderLogicalPresentation(renderer, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+    SDL_CreateWindowAndRenderer(PROGRAM_NAME, w, h, flags, &window, &renderer);
+    SDL_SetRenderLogicalPresentation(renderer, w, h, SDL_LOGICAL_PRESENTATION_LETTERBOX);
     text_engine = TTF_CreateRendererTextEngine(renderer);
 
     SDL_SetWindowIcon(window, IMG_Load("res/icon.png"));
@@ -37,17 +37,19 @@ void Display_Quit(void)
     SDL_Quit();
 }
 
-bool update_flag = false;                     // 更新标志
+bool update_flag = true;                      // 更新标志
 Uint64 frame_time_ = (Uint64)(1e9 / FPS_);    // 每帧时间，单位纳秒
+Uint64 clock_lime_ = 0;                        // 上一帧时间戳
 Ui* root = nullptr;                           // 根元素指针
 /**
  * @brief 主循环
  */
 void Display_Mainloop(void)
 {
+    clock_lime_ = SDL_GetTicksNS();
     while (true)
     {
-        auto st_ = SDL_GetTicksNS();    // 获取当前时间戳
+        fps_clock();    // 控制帧率
 
         SDL_Event event;
         while (SDL_PollEvent(&event))
@@ -69,11 +71,25 @@ void Display_Mainloop(void)
             SDL_RenderPresent(renderer);
             update_flag = false;
         }
-
-        Uint64 elapsed_time_ = SDL_GetTicksNS() - st_;    // 计算帧间隔时间
-        if (elapsed_time_ < frame_time_) { SDL_DelayNS(frame_time_ - elapsed_time_); }
     }
     end:;
+}
+
+/**
+ * @brief FPS时钟函数
+ * @return 返回两次调用该函数的时间差，单位纳秒
+ */
+Uint64 fps_clock(void)
+{
+    auto dt = SDL_GetTicksNS() - clock_lime_;
+    if (dt < frame_time_)
+    {
+        SDL_DelayNS(frame_time_ - dt);
+        dt = frame_time_;
+    }
+    clock_lime_ += dt;
+    // std::cout << "FPS: " << (double)1e9 / dt << std::endl;    // 输出FPS
+    return dt;
 }
 
 /**
@@ -185,11 +201,11 @@ void Ui::leave(void)
  */
 void Ui::render(float left, float top)
 {
-    top += rect.y;
     left += rect.x;
+    top += rect.y;
     for (auto &ui : kidgroup)
     {
-        ui->render(top, left);
+        ui->render(left, top);
     }
 }
 

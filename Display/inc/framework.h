@@ -19,7 +19,10 @@ void Display_Mainloop(void);
 
 Uint64 fps_clock(void);
 void mark_update(void);
+void update(Uint64 dt);
 
+typedef void (*UpdateFunc)(Uint64 dt);            // 更新函数类型
+extern std::list<UpdateFunc> update_func_list;    // 更新函数列表
 
 /**
  * @brief 显示元素基类

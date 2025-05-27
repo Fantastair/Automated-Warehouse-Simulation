@@ -3,6 +3,31 @@
 
 #define ZOOM_FACTOR 0.04f    // 缩放因子
 
-void main_page_Init(void);    // 初始化主页面
+class CarUi : public Ui
+{
+public:
+    SDL_Texture *texture;    // 车辆纹理
+    SDL_Surface *surface;    // 车辆图像表面
+    int num;                 // 车辆编号
+    double angle;            // 车辆角度，角度制
+    TextUi *id_text;         // 车辆编号文本
+    static float WIDTH;      // 车辆宽度
+    static float HEIGHT;     // 车辆高度
+
+    CarUi(int n);
+    ~CarUi(void);
+
+    void init_id_text(void);
+    void update_texture(void);
+    void update_surface(void);
+    void render(float left, float top) override;
+};
+
+extern CarUi *carui_list[7];
+
+void main_page_Init(void);
+
+void update_car_pos(void);
+void update_car_pos_func(Uint64 dt);
 
 #endif

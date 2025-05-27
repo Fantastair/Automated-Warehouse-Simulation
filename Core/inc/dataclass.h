@@ -16,33 +16,43 @@
 #define PC2PC_DISTANCE         1900     // 入库口右端距离入库口左端距离，mm
 #define PC2CP_DISTANCE         10900    // 入库口右端距离出库口左端距离，mm
 // 穿梭车参数
-#define MAXSPEED_STRIGHT    ((double)(8000/3))    // 最大直轨速度，mm/s
-#define MAXSPEED_CURVE      ((double)(2000/3))    // 最大弯轨速度，mm/s
-#define ACCELERATION        500                   // 最大加（减）速度，mm/s^2
+#define MAXSPEED_STRIGHT    ((double)(8e-6/3))    // 最大直轨速度，mm/ns
+#define MAXSPEED_CURVE      ((double)(2e-6/3))    // 最大弯轨速度，mm/ns
+#define ACCELERATION        5e-16                 // 最大加（减）速度，mm/ns^2
 #define CARLENGTH           2000                  // 车辆长度，mm
 #define MINDISTANCE         200                   // 前后车最小间距，考虑车身长度，mm
-#define LOADTIME            7.5                   // 装卸货物时间，s
+#define MINDISTANCE_CURVE   250                   // 弯道上前后车最小间距，考虑车身长度，mm
+#define LOADTIME            7.5e9                 // 穿梭车与接口设备交接货物时间，纳秒
 // 接口参数
-#define SC_LOAD_TIME    50    // 出库接口设备出货时间，s
-#define CS_LOAD_TIME    25    // 入库接口设备收货时间，s
-#define PC_LOAD_TIME    30    // 入库口装货时间，s
-#define CP_LOAD_TIME    30    // 出库口卸货时间，s
+#define SC_LOAD_TIME    50e9    // 出库接口设备出货时间，ns
+#define CS_LOAD_TIME    25e9    // 入库接口设备收货时间，ns
+#define PC_LOAD_TIME    30e9    // 入库口装货时间，ns
+#define CP_LOAD_TIME    30e9    // 出库口卸货时间，ns
 
 
 enum class CarState    // 车辆状态
 {
-    CarStop = 0,    // 停车
-    CarAddSpeed,    // 加速
-    CarDecSpeed,    // 减速
-    CarRun,         // 行驶
+    CarIdle = 0,    // 空闲
+    CarGetting,     // 正在获取货物
+    CarPutting,     // 正在放置货物
+    CarToGet,       // 前往取货点
+    CarToPut,       // 前往收货点
 };
 
 enum class ConnectorState     // 接口设备状态
 {
     ConnectorIdle = 0,    // 空闲
+    WaitForCar,           // 有货，等待穿梭车到达
     WorkWithCar,          // 与穿梭车交接货物
     WorkWithOther,        // 与其他对象（库存/操作人员）交接货物
 };
+
+typedef struct 
+{
+    int start_connector;    // 起始接口索引
+    int end_connector;      // 结束接口索引
+} CarTask;    // 车辆任务
+
 
 
 extern double TrackSplit[5];
@@ -59,29 +69,38 @@ int GetTrackIndex(double pos);
  */
 class ShuttleCar
 {
-    public:
-        CarState state;       // 车辆状态
-        double speed;         // 车辆速度，mm/s
-        double position;      // 车辆位置，mm
-        int target;           // 目标接口索引
+public:
+    int id;                    // 车辆编号
+    CarState state;            // 车辆状态
+    double speed;              // 车辆速度，mm/ns
+    double position;           // 车辆位置，mm
+    double initial_pos;        // 车辆初始位置，mm
+    CarTask task;              // 车辆任务
+    ShuttleCar *front;         // 前一辆车的指针
+    ShuttleCar *back;          // 后一辆车的指针
+    Uint64 time_temp;          // 临时时间戳，用于统计时间
 
-        ShuttleCar *front;    // 前一辆车的指针
-        ShuttleCar *back;     // 后一辆车的指针
+    ShuttleCar(int id_);
 
-        ShuttleCar() : state(CarState::CarStop), speed(0), position(0), target(0), front(nullptr), back(nullptr) {}    // 默认构造函数
+    void init(void);
+    void update(Uint64 dt);
+    double get_free_distance(void);
+    void move_to_pos_dt(double pos, Uint64 dt);
 };
 extern ShuttleCar CarList[7];
+extern int CarNum;
+ShuttleCar* GetFreeCar(void);
 
 /**
  * @brief 接口设备
  */
 class Connector
 {
-    public:
-        ConnectorState state;    // 接口状态
-        Uint64 worktime;         // 工作时间，从交接开始记录时长
+public:
+    ConnectorState state;    // 接口状态
+    Uint64 worktime;         // 工作时间，从交接开始记录时长
 
-        Connector() : state(ConnectorState::ConnectorIdle), worktime(0) {}
+    Connector() : state(ConnectorState::ConnectorIdle), worktime(0) {}
 };
 extern Connector ConnectorList[18];
 

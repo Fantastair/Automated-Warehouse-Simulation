@@ -49,7 +49,7 @@ void Display_Mainloop(void)
     clock_lime_ = SDL_GetTicksNS();
     while (true)
     {
-        fps_clock();    // 控制帧率
+        auto dt = fps_clock();    // 控制帧率
 
         SDL_Event event;
         while (SDL_PollEvent(&event))
@@ -62,6 +62,8 @@ void Display_Mainloop(void)
                     break;
             }
         }
+
+        update(dt);
 
         if (update_flag)    // 更新标志为真，表示需要更新界面
         {
@@ -101,6 +103,19 @@ void mark_update(void)
     if (!update_flag)
     {
         update_flag = true;
+    }
+}
+
+std::list<UpdateFunc> update_func_list;    // 更新函数列表
+/**
+ * @brief 更新函数
+ * @param dt 时间差，单位纳秒
+ */
+void update(Uint64 dt)
+{
+    for (auto &func : update_func_list)
+    {
+        func(dt);    // 调用每个更新函数
     }
 }
 
@@ -249,24 +264,24 @@ void Ui::HandleEvent(SDL_Event &event)
     }
 }
 
-void Ui::set_rect_left(float left) { this->rect.x = left; }
-void Ui::set_rect_right(float right) { this->rect.x = right - this->rect.w; }
-void Ui::set_rect_bottom(float bottom) { this->rect.y = bottom - this->rect.h; }
-void Ui::set_rect_top(float top) { this->rect.y = top; }
-void Ui::set_rect_width(float width) { this->rect.w = width; }
-void Ui::set_rect_height(float height) { this->rect.h = height; }
-void Ui::set_rect_size(float width, float height) { this->rect.w = width; this->rect.h = height; }
-void Ui::set_rect_centerx(float x) { this->rect.x = x - this->rect.w / 2; }
-void Ui::set_rect_centery(float y) { this->rect.y = y - this->rect.h / 2; }
-void Ui::set_rect_center(float x, float y) { this->rect.x = x - this->rect.w / 2; this->rect.y = y - this->rect.h / 2; }
-void Ui::set_rect_topleft(float x, float y) { this->rect.x = x; this->rect.y = y; }
-void Ui::set_rect_topright(float x, float y) { this->rect.x = x - this->rect.w; this->rect.y = y; }
-void Ui::set_rect_bottomleft(float x, float y) { this->rect.x = x; this->rect.y = y - this->rect.h; }
-void Ui::set_rect_bottomright(float x, float y) { this->rect.x = x - this->rect.w; this->rect.y = y - this->rect.h; }
-void Ui::set_rect_midleft(float x, float y) { this->rect.x = x; this->rect.y = y - this->rect.h / 2; }
-void Ui::set_rect_midright(float x, float y) { this->rect.x = x - this->rect.w; this->rect.y = y - this->rect.h / 2; }
-void Ui::set_rect_midtop(float x, float y) { this->rect.x = x - this->rect.w / 2; this->rect.y = y; }
-void Ui::set_rect_midbottom(float x, float y) { this->rect.x = x - this->rect.w / 2; this->rect.y = y - this->rect.h; }
+void Ui::set_rect_left(float left)                   { this->rect.x = left; }
+void Ui::set_rect_right(float right)                 { this->rect.x = right - this->rect.w; }
+void Ui::set_rect_bottom(float bottom)               { this->rect.y = bottom - this->rect.h; }
+void Ui::set_rect_top(float top)                     { this->rect.y = top; }
+void Ui::set_rect_width(float width)                 { this->rect.w = width; }
+void Ui::set_rect_height(float height)               { this->rect.h = height; }
+void Ui::set_rect_size(float width, float height)    { this->rect.w = width; this->rect.h = height; }
+void Ui::set_rect_centerx(float x)                   { this->rect.x = x - this->rect.w / 2; }
+void Ui::set_rect_centery(float y)                   { this->rect.y = y - this->rect.h / 2; }
+void Ui::set_rect_center(float x, float y)           { this->rect.x = x - this->rect.w / 2; this->rect.y = y - this->rect.h / 2; }
+void Ui::set_rect_topleft(float x, float y)          { this->rect.x = x; this->rect.y = y; }
+void Ui::set_rect_topright(float x, float y)         { this->rect.x = x - this->rect.w; this->rect.y = y; }
+void Ui::set_rect_bottomleft(float x, float y)       { this->rect.x = x; this->rect.y = y - this->rect.h; }
+void Ui::set_rect_bottomright(float x, float y)      { this->rect.x = x - this->rect.w; this->rect.y = y - this->rect.h; }
+void Ui::set_rect_midleft(float x, float y)          { this->rect.x = x; this->rect.y = y - this->rect.h / 2; }
+void Ui::set_rect_midright(float x, float y)         { this->rect.x = x - this->rect.w; this->rect.y = y - this->rect.h / 2; }
+void Ui::set_rect_midtop(float x, float y)           { this->rect.x = x - this->rect.w / 2; this->rect.y = y; }
+void Ui::set_rect_midbottom(float x, float y)        { this->rect.x = x - this->rect.w / 2; this->rect.y = y - this->rect.h; }
 
 
 /**

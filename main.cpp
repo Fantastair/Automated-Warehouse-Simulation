@@ -7,7 +7,9 @@
  */
 int main(int, char**)
 {
-    // Launch_Init();    // 启动界面初始化
+    RandomInit();            // 初始化随机数生成器
+
+    Launch_Init();    // 启动界面初始化
 
     DataClass_Init();                                // 初始化底层数据类
     Display_Init(WINDOW_WIDTH, WINDOW_HEIGHT, 0);    // 初始化显示框架

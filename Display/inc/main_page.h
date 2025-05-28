@@ -10,6 +10,7 @@ public:
     SDL_Surface *surface;    // 车辆图像表面
     int num;                 // 车辆编号
     double angle;            // 车辆角度，角度制
+    RectUi *progress_bar;    // 进度条
     TextUi *id_text;         // 车辆编号文本
     static float WIDTH;      // 车辆宽度
     static float HEIGHT;     // 车辆高度
@@ -20,6 +21,7 @@ public:
     void init_id_text(void);
     void update_texture(void);
     void update_surface(void);
+    void update_progress(void);
     void render(float left, float top) override;
 };
 

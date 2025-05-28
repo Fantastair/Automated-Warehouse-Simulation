@@ -7,7 +7,7 @@
 Uint64 last_NS;             // 上次仿真时间戳
 bool thread_running = true;  // 仿真线程是否正在运行
 bool Simulating = false;    // 是否正在仿真
-
+int simulation_speed = 8; // 仿真速度，单位倍数
 /**
  * @brief 运行仿真
  * @note 该函数在仿真线程中运行
@@ -24,10 +24,29 @@ void simulate(void)
         while (Simulating)
         {
             Uint64 t = GetNS() - last_NS;    // 计算时间差
-            last_NS += t;                  // 更新时间戳
-            update_simulation(t);          // 更新状态和数据
+            last_NS += t;                    // 更新时间戳
+            t *= simulation_speed;           // 根据仿真速度调整时间差
+            update_simulation(t);            // 更新状态和数据
         }
     }
+}
+
+/**
+ * @brief 设置仿真速度
+ * @param speed 仿真速度倍数
+ */
+void set_simulation_speed(int speed)
+{
+    simulation_speed = speed;
+}
+
+/**
+ * @brief 获取仿真速度
+ * @return 返回当前仿真速度倍数
+ */
+int get_simulation_speed(void)
+{
+    return simulation_speed;
 }
 
 /**

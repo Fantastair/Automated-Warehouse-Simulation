@@ -10,4 +10,9 @@ double angle2degree(double angle);
 
 double min_break_distance(double current_speed, double target_speed);
 
+void RandomInit(void);
+int RandomInt(double a, double b);
+
+void GenerateRandomTask(CarTask &task);
+
 #endif

@@ -200,6 +200,34 @@ void Ui::join(Ui *father_)
 }
 
 /**
+ * @brief 加入父元素链表到指定位置
+ * @param father_ 父元素引用
+ * @param index 索引位置
+ */
+void Ui::join(Ui &father_, int index)
+{
+    if (this->father != nullptr) { this->leave(); }
+    this->father = &father_;
+    auto it = father_.kidgroup.begin();
+    std::advance(it, index);
+    father_.kidgroup.insert(it, this);
+}
+
+/**
+ * @brief 加入父元素链表到指定位置
+ * @param father_ 父元素指针
+ * @param index 索引位置
+ */
+void Ui::join(Ui *father_, int index)
+{
+    if (this->father != nullptr) { this->leave(); }
+    this->father = father_;
+    auto it = father_->kidgroup.begin();
+    std::advance(it, index);
+    father_->kidgroup.insert(it, this);
+}
+
+/**
  * @brief 离开父元素链表
  */
 void Ui::leave(void)

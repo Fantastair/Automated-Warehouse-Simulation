@@ -134,8 +134,12 @@ void main_page_Init(void)
     for (int i = 0; i < 7; i++)
     {
         carui_list[i]->init_id_text();
-        // CarList[i].init();
-        // std::cout << CarList[i].position << " " << CarList[i].initial_pos << std::endl;
+        CarList[i].init();
+    }
+
+    for (int i = 0; i < CarNum; i++)
+    {
+        GenerateRandomTask(CarList[i].task);
     }
 
     update_car_pos();
@@ -149,6 +153,8 @@ void main_page_Init(void)
 CarUi::CarUi(int n) : Ui(0, 0, WIDTH, HEIGHT), num(n), angle(0)
 {
     surface = SDL_CreateSurface((int)WIDTH, (int)HEIGHT, SDL_PIXELFORMAT_RGBA32);
+    progress_bar = new RectUi(WIDTH - 16, 0, 0, nullptr, nullptr);
+    progress_bar->set_rect_center(WIDTH / 2, HEIGHT / 2);
 }
 
 /**
@@ -188,9 +194,35 @@ void CarUi::update_surface(void)
     SDL_FillSurfaceRect(surface, nullptr, SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format), nullptr, 0, 0, 0, 0));
 
     // 绘制车辆
+    Draw_Rect_Surface(surface, progress_bar->rect, 0, progress_bar->bg, nullptr);
     Draw_Rect_Surface(surface, {0, 0, WIDTH, HEIGHT}, 8, nullptr, rm.getColor_(THEMEBLUE), 8);
 
     SDL_LockSurface(surface);
+}
+
+/**
+ * @brief 更新进度条
+ */
+void CarUi::update_progress(void)
+{
+    if (CarList[num].task.task_type == 0 && progress_bar->bg != rm.getColor_(GREEN))
+    {
+        progress_bar->bg = rm.getColor_(GREEN);
+    }
+    else if (CarList[num].task.task_type == 1 && progress_bar->bg != rm.getColor_(ORANGE))
+    {
+        progress_bar->bg = rm.getColor_(ORANGE);
+    }
+    if (CarList[num].state == CarState::CarGetting)
+    {
+        progress_bar->set_rect_height(static_cast<float>((HEIGHT - 14) * static_cast<double>(CarList[num].time_temp) / LOADTIME));
+        progress_bar->set_rect_top(7);
+    }
+    else if (CarList[num].state == CarState::CarPutting)
+    {
+        progress_bar->set_rect_height(static_cast<float>((HEIGHT - 14) * (1 - static_cast<double>(CarList[num].time_temp) / LOADTIME)));
+        progress_bar->set_rect_top(7);
+    }
 }
 
 /**
@@ -202,6 +234,7 @@ void CarUi::render(float left, float top)
 {
     rect.x += left;
     rect.y += top;
+    update_progress();
     update_surface();
     update_texture();
     SDL_RenderTextureRotated(renderer, texture, nullptr, &rect, angle, NULL, SDL_FLIP_NONE);

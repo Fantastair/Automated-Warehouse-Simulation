@@ -74,7 +74,7 @@ void DataClass_Init(void)
     ConnectorPos[12] = ConnectorPos[13] - PC2PC_DISTANCE - CONNECTOR_WIDTH;
 
     // 初始使用 3 辆车
-    Set_CarNum(3);
+    Set_CarNum(7);
     Reset_CarPos();
 }
 
@@ -130,7 +130,7 @@ int GetTrackIndex(double pos)
 /**
  * @brief 穿梭车构造函数
  */
-ShuttleCar::ShuttleCar(int id_) : id(id_) , state(CarState::CarIdle), speed(0), position(0), task({-1, -1}), front(nullptr), back(nullptr), time_temp(0) {}
+ShuttleCar::ShuttleCar(int id_) : id(id_) , state(CarState::CarIdle), speed(0), position(0), task({-1, -1, -1}), front(nullptr), back(nullptr), time_temp(0) {}
 
 /**
  * @brief 初始化穿梭车
@@ -157,6 +157,7 @@ void ShuttleCar::update(Uint64 dt)
         if (task.start_connector != -1 && task.end_connector != -1)    // 如果有任务
         {
             state = CarState::CarToGet;    // 切换到 前往取货点 状态
+            // std::cout << "Car " << id << " switch to CarToGet state, task: " << task.start_connector << " -> " << task.end_connector << std::endl;
         }
         break;
     case CarState::CarToGet: // 前往取货点
@@ -164,6 +165,7 @@ void ShuttleCar::update(Uint64 dt)
         {
             state = CarState::CarGetting;    // 切换到 正在获取货物 状态
             time_temp = 0;
+            // std::cout << "Car " << id << " switch to CarGetting state." << std::endl;
         }
         else
         {
@@ -174,7 +176,9 @@ void ShuttleCar::update(Uint64 dt)
         time_temp += dt;    // 累计时间
         if (time_temp >= LOADTIME)    // 完成取货
         {
+            time_temp = static_cast<Uint64>(LOADTIME);
             state = CarState::CarToPut;    // 切换到 前往放置点 状态
+            // std::cout << "Car " << id << " switch to CarToPut state." << std::endl;
         }
         break;
     case CarState::CarToPut: // 前往收货点
@@ -182,6 +186,7 @@ void ShuttleCar::update(Uint64 dt)
         {
             state = CarState::CarPutting;    // 切换到 正在放置货物 状态
             time_temp = 0;
+            // std::cout << "Car " << id << " switch to CarPutting state." << std::endl;
         }
         else
         {
@@ -192,8 +197,11 @@ void ShuttleCar::update(Uint64 dt)
         time_temp += dt;    // 累计时间
         if (time_temp >= LOADTIME)    // 完成放置
         {
+            time_temp = static_cast<Uint64>(LOADTIME);
             state = CarState::CarIdle;    // 切换到 空闲 状态
-            task = {-1, -1};    // 清空任务
+            GenerateRandomTask(task);    // 生成新的任务
+            // task = {-1, -1, -1};    // 清空任务
+            // std::cout << "Car " << id << " switch to CarIdle state." << std::endl;
         }
         break;
     default:
@@ -244,14 +252,20 @@ double ShuttleCar::get_free_distance(void)
  */
 void ShuttleCar::move_to_pos_dt(double pos, Uint64 dt)
 {
-    int self_track = GetTrackIndex(position);    // 当前车辆所在轨道索引
-    bool close_target = false;    // 是否接近目标位置
-    bool close_curve = false;     // 是否接近弯道
-    bool close_front = false;     // 是否接近前方车辆
+    // 是否到达目标位置
+    if (fmod(pos - position + TrackSplit[4], TrackSplit[4]) <= 0.01)
+    {
+        position = pos;
+        return;
+    }
 
-    if (fmod(pos - position + TrackSplit[4], TrackSplit[4]) <= min_break_distance(speed, 0)) { close_target = true; }
-    if (self_track % 2 == 0 && fmod(TrackSplit[self_track + 1] - position + TrackSplit[4], TrackSplit[4]) <= min_break_distance(speed, MAXSPEED_CURVE)) { close_curve = true; }
-    if (speed > front->speed && get_free_distance() <= min_break_distance(speed, front->speed)) { close_front = true; }
+    int self_track = GetTrackIndex(position);    // 当前车辆所在轨道索引
+    // 是否接近目标位置
+    bool close_target = fmod(pos - position + TrackSplit[4], TrackSplit[4]) <= min_break_distance(speed, 0);
+    // 是否接近弯道
+    bool close_curve = (self_track % 2 == 0 && fmod(TrackSplit[self_track + 1] - position + TrackSplit[4], TrackSplit[4]) <= min_break_distance(speed, MAXSPEED_CURVE));
+    // 是否接近前方车辆
+    bool close_front = (speed >= front->speed && get_free_distance() <= min_break_distance(speed, front->speed));
 
     if (close_target || close_curve || close_front)    // 需要减速
     {

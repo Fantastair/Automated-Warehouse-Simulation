@@ -44,8 +44,10 @@ public:
     void (*handle_mbu_callback)(SDL_MouseButtonEvent &event);    // 鼠标抬起回调函数
     void (*handle_mmv_callback)(SDL_MouseMotionEvent &event);    // 鼠标移动回调函数
 
-    virtual void join(Ui &father);                 // 加入父元素链表
-    virtual void join(Ui *father);                 // 加入父元素链表
+    virtual void join(Ui &father_);                 // 加入父元素链表
+    virtual void join(Ui *father_);                 // 加入父元素链表
+    virtual void join(Ui &father_, int index);      // 加入父元素链表到指定位置
+    virtual void join(Ui *father_, int index);      // 加入父元素链表到指定位置
     virtual void leave(void);                      // 离开父元素链表
 
     virtual void render(float left, float top);    // 渲染函数

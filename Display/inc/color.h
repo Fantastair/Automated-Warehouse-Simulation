@@ -11,8 +11,8 @@
 #define DEEPWHITE   "#c4c7cc"
 #define THEMEBLUE   "#8685ef"
 #define GRAY        "#aca9bb"
-#define LIGHTGREEN  "#c5ebde"
-#define RED         "#fa575d"
+#define GREEN       "#00ad87"
+#define ORANGE      "#e3701f"
 #define LIGHTBLUE   "#c6c0f8"
 
 #endif

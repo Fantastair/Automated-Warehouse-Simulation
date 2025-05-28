@@ -1,4 +1,5 @@
 #include <random>
+#include <string>
 #include "../../SDL3.h"
 #include "../../Core.h"
 #include "../../Display.h"
@@ -88,4 +89,19 @@ void GenerateRandomTask(CarTask &task)
         task.start_connector = RandomInt(0, 5) * 2 + 1;    // 随机入库接口
         task.end_connector = RandomInt(12, 14);    // 随机出库接口
     }
+}
+
+/**
+ * @brief 将纳秒时间转换为字符串
+ * @param ns 纳秒时间
+ * @return 返回格式化后的时间字符串 xx:xx:xx.xx
+ */
+std::string NS2String(Uint64 ns)
+{
+    Uint64 seconds = ns / 1'000'000'000;
+    // Uint64 milliseconds = (ns % 1'000'000'000) / 1'000'000;
+
+    char buffer[16];
+    snprintf(buffer, sizeof(buffer), "%02llu:%02llu:%02llu", seconds / 3600, (seconds % 3600) / 60, seconds % 60);
+    return std::string(buffer);
 }

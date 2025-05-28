@@ -120,6 +120,8 @@ public:
     ~TextUi(void);
 
     virtual void render(float left, float top);    // 渲染函数
+
+    virtual void set_text(const std::string &text_, TTF_Font *font_, SDL_Color &color);    // 设置文本内容
 };
 
 
@@ -135,9 +137,9 @@ public:
     float bottom_left_radius;     // 左下角圆角半径
     float bottom_right_radius;    // 右下角圆角半径
 
-    RectUi(float width, float height, float bd, SDL_Color *bg, SDL_Color *fg);
-    RectUi(float width, float height, float bd, SDL_Color *bg, SDL_Color *fg, float radius);
-    RectUi(float width, float height, float bd, SDL_Color *bg, SDL_Color *fg, float topleft_radius, float topright_radius, float bottomleft_radius, float bottomright_radius);
+    RectUi(float width, float height, float bd_, SDL_Color *bg_, SDL_Color *fg_);
+    RectUi(float width, float height, float bd_, SDL_Color *bg_, SDL_Color *fg_, float radius_);
+    RectUi(float width, float height, float bd_, SDL_Color *bg_, SDL_Color *fg_, float topleft_radius_, float topright_radius_, float bottomleft_radius_, float bottomright_radius_);
 
     virtual void render(float left, float top);    // 渲染函数
 };

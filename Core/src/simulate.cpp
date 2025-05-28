@@ -4,28 +4,27 @@
 #include "../../SDL3.h"
 #include "../../Core.h"
 
-Uint64 last_NS;             // 上次仿真时间戳
-bool thread_running = true;  // 仿真线程是否正在运行
-bool Simulating = false;    // 是否正在仿真
-int simulation_speed = 8; // 仿真速度，单位倍数
+bool thread_running = true;    // 仿真线程是否正在运行
+bool Simulating = false;       // 是否正在仿真
+int simulation_speed = 8;      // 仿真速度，单位倍数
+Uint64 system_runtime = 0;     // 系统运行时间，单位纳秒
+Uint64 simulation_time = 0;    // 仿真时间，单位纳秒
+
 /**
  * @brief 运行仿真
  * @note 该函数在仿真线程中运行
  */
 void simulate(void)
 {
+    system_runtime = GetNS();
     while (thread_running)
     {
-        while (!Simulating)
+        Uint64 t = GetNS() - system_runtime;    // 计算时间差
+        system_runtime += t;                    // 更新时间戳
+        if (Simulating)
         {
-            if (!thread_running) return;  // 如果线程已停止，退出
-        }
-        last_NS = GetNS();
-        while (Simulating)
-        {
-            Uint64 t = GetNS() - last_NS;    // 计算时间差
-            last_NS += t;                    // 更新时间戳
             t *= simulation_speed;           // 根据仿真速度调整时间差
+            simulation_time += t;            // 累加仿真时间
             update_simulation(t);            // 更新状态和数据
         }
     }

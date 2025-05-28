@@ -2,6 +2,7 @@
 #define __MISC_H__
 
 #include "../../SDL3.h"
+#include <string>
 
 Uint64 GetNS(void);
 
@@ -14,5 +15,7 @@ void RandomInit(void);
 int RandomInt(double a, double b);
 
 void GenerateRandomTask(CarTask &task);
+
+std::string NS2String(Uint64 ns);
 
 #endif

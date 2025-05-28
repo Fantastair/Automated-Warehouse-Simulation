@@ -57,7 +57,10 @@ float ConnectorUi::WIDTH = CONNECTOR_WIDTH * ZOOM_FACTOR;
 float ConnectorUi::HEIGHT = (CONNECTOR_WIDTH * 2) * ZOOM_FACTOR;
 ConnectorUi *connectorui_list[18];
 
-
+TextUi *system_runtime_text = nullptr;         // 系统运行时间文本
+TextUi *simulation_time_text = nullptr;        // 仿真时间文本
+TextUi *system_runtime_tip_text = nullptr;     // 系统运行时间提示文本
+TextUi *simulation_time_tip_text = nullptr;    // 仿真时间提示文本
 /**
  * @brief 初始化主页面
  */
@@ -126,6 +129,17 @@ void main_page_Init(void)
     outer_track->set_rect_center(WINDOW_WIDTH / 2, 600 / 2);
     outer_track->join(root);
 
+    RectUi *goods_in_legend = new RectUi(30, 30, 4, rm.getColor_(GREEN), rm.getColor_(DARKBLUE), 4);
+    goods_in_legend->set_rect_midtop(120, 480);
+    goods_in_legend->join(root);
+    RectUi *goods_out_legend = new RectUi(30, 30, 4, rm.getColor_(ORANGE), rm.getColor_(DARKBLUE), 4);
+    goods_out_legend->set_rect_midtop(120, 540);
+    goods_out_legend->join(root);
+    TextUi *goods_in_text = new TextUi("入库货物", rm.getFont("deyi.ttf", 32), rm.getColor(DARKBLUE), goods_in_legend->rect.x + goods_in_legend->rect.w + 8, goods_in_legend->rect.y + goods_in_legend->rect.h / 2);
+    goods_in_text->join(root);
+    TextUi *goods_out_text = new TextUi("出库货物", rm.getFont("deyi.ttf", 32), rm.getColor(DARKBLUE), goods_out_legend->rect.x + goods_out_legend->rect.w + 8, goods_out_legend->rect.y + goods_out_legend->rect.h / 2);
+    goods_out_text->join(root);
+
     for (int i = 0; i < 18; i++)
     {
         connectorui_list[i] = new ConnectorUi(i);
@@ -144,6 +158,18 @@ void main_page_Init(void)
 
     update_car_pos();
     update_func_list.push_back(update_car_pos_func);
+
+    system_runtime_tip_text = new TextUi("系统运行时间：", rm.getFont("deyi.ttf", 48), rm.getColor(DARKBLUE), 24, 688);
+    system_runtime_tip_text->join(root);
+    simulation_time_tip_text = new TextUi("仿真时间：", rm.getFont("deyi.ttf", 48), rm.getColor(DARKBLUE));
+    simulation_time_tip_text->set_rect_midright(system_runtime_tip_text->rect.x + system_runtime_tip_text->rect.w, system_runtime_tip_text->rect.y + system_runtime_tip_text->rect.h + 48);
+    simulation_time_tip_text->join(root);
+    system_runtime_text = new TextUi("00:00:00.00", rm.getFont("deyi.ttf", 48), rm.getColor(DARKBLUE), system_runtime_tip_text->rect.x + system_runtime_tip_text->rect.w + 8, system_runtime_tip_text->rect.y + system_runtime_tip_text->rect.h / 2);
+    system_runtime_text->join(root);
+    simulation_time_text = new TextUi("00:00:00.00", rm.getFont("deyi.ttf", 48), rm.getColor(DARKBLUE), simulation_time_tip_text->rect.x + simulation_time_tip_text->rect.w + 8, simulation_time_tip_text->rect.y + simulation_time_tip_text->rect.h / 2);
+    simulation_time_text->join(root);
+
+    update_func_list.push_back(update_time_func);
 }
 
 
@@ -317,6 +343,10 @@ void update_car_pos(void)
     }
 }
 
+/**
+ * @brief 更新穿梭车位置
+ * @param dt 时间差，单位纳秒
+ */
 void update_car_pos_func(Uint64 dt)
 {
     if (Simulating)
@@ -324,6 +354,19 @@ void update_car_pos_func(Uint64 dt)
         update_car_pos();
         mark_update();
     }
+    return;
+    dt;
+}
+
+/**
+ * @brief 更新时间文本
+ */
+void update_time_func(Uint64 dt)
+{
+    system_runtime_text->set_text(NS2String(system_runtime), rm.getFont("deyi.ttf", 48), rm.getColor(DARKBLUE));
+    system_runtime_text->set_rect_midleft(system_runtime_tip_text->rect.x + system_runtime_tip_text->rect.w + 8, system_runtime_tip_text->rect.y + system_runtime_tip_text->rect.h / 2);
+    simulation_time_text->set_text(NS2String(simulation_time), rm.getFont("deyi.ttf", 48), rm.getColor(DARKBLUE));
+    simulation_time_text->set_rect_midleft(simulation_time_tip_text->rect.x + simulation_time_tip_text->rect.w + 8, simulation_time_tip_text->rect.y + simulation_time_tip_text->rect.h / 2);
     return;
     dt;
 }

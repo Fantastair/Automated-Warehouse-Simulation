@@ -483,6 +483,22 @@ void TextUi::render(float left, float top)
     Ui::render(left, top);
 }
 
+/**
+ * @brief 设置文本内容
+ * @param text_ 文本内容
+ * @param font_ 字体
+ * @param color 文本颜色
+ */
+void TextUi::set_text(const std::string &text_, TTF_Font *font_, SDL_Color &color)
+{
+    TTF_DestroyText(text);
+    text = TTF_CreateText(text_engine, font_, text_.c_str(), 0);
+    TTF_SetTextColor(text, color.r, color.g, color.b, color.a);
+    int w, h;
+    TTF_GetTextSize(text, &w, &h);
+    set_rect_size((float)w, (float)h);
+}
+
 
 /**
  * @brief 初始化矩形元素
@@ -492,7 +508,7 @@ void TextUi::render(float left, float top)
  * @param bg 背景颜色
  * @param fg 边框颜色
  */
-RectUi::RectUi(float width, float height, float bd, SDL_Color *bg, SDL_Color *fg) : Ui(0, 0, width, height), bd(bd), bg(bg), fg(fg), radius(0), top_left_radius(0), top_right_radius(0), bottom_left_radius(0), bottom_right_radius(0) {}
+RectUi::RectUi(float width, float height, float bd_, SDL_Color *bg_, SDL_Color *fg_) : Ui(0, 0, width, height), bg(bg_), fg(fg_), bd(bd_), radius(0), top_left_radius(0), top_right_radius(0), bottom_left_radius(0), bottom_right_radius(0) {}
 
 /**
  * @brief 初始化矩形元素
@@ -503,7 +519,7 @@ RectUi::RectUi(float width, float height, float bd, SDL_Color *bg, SDL_Color *fg
  * @param fg 边框颜色
  * @param radius 圆角半径
  */
-RectUi::RectUi(float width, float height, float bd, SDL_Color *bg, SDL_Color *fg, float radius) : Ui(0, 0, width, height), bd(bd), bg(bg), fg(fg), radius(radius), top_left_radius(0), top_right_radius(0), bottom_left_radius(0), bottom_right_radius(0) {}
+RectUi::RectUi(float width, float height, float bd_, SDL_Color *bg_, SDL_Color *fg_, float radius_) : Ui(0, 0, width, height), bg(bg_), fg(fg_), bd(bd_), radius(radius_), top_left_radius(0), top_right_radius(0), bottom_left_radius(0), bottom_right_radius(0) {}
 
 /**
  * @brief 初始化矩形元素
@@ -517,7 +533,7 @@ RectUi::RectUi(float width, float height, float bd, SDL_Color *bg, SDL_Color *fg
  * @param bottomleft_radius 左下角圆角半径
  * @param bottomright_radius 右下角圆角半径
  */
-RectUi::RectUi(float width, float height, float bd, SDL_Color *bg, SDL_Color *fg, float topleft_radius, float topright_radius, float bottomleft_radius, float bottomright_radius) : Ui(0, 0, width, height), bd(bd), bg(bg), fg(fg), radius(0), top_left_radius(topleft_radius), top_right_radius(topright_radius), bottom_left_radius(bottomleft_radius), bottom_right_radius(bottomright_radius) {}
+RectUi::RectUi(float width, float height, float bd_, SDL_Color *bg_, SDL_Color *fg_, float topleft_radius_, float topright_radius_, float bottomleft_radius_, float bottomright_radius_) : Ui(0, 0, width, height), bg(bg_), fg(fg_), bd(bd_), radius(0), top_left_radius(topleft_radius_), top_right_radius(topright_radius_), bottom_left_radius(bottomleft_radius_), bottom_right_radius(bottomright_radius_) {}
 
 /**
  * @brief 渲染矩形元素

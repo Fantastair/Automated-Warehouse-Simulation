@@ -57,10 +57,12 @@ float ConnectorUi::WIDTH = CONNECTOR_WIDTH * ZOOM_FACTOR;
 float ConnectorUi::HEIGHT = (CONNECTOR_WIDTH * 2) * ZOOM_FACTOR;
 ConnectorUi *connectorui_list[18];
 
-TextUi *system_runtime_text = nullptr;         // 系统运行时间文本
-TextUi *simulation_time_text = nullptr;        // 仿真时间文本
-TextUi *system_runtime_tip_text = nullptr;     // 系统运行时间提示文本
-TextUi *simulation_time_tip_text = nullptr;    // 仿真时间提示文本
+TextUi *system_runtime_text = nullptr;          // 系统运行时间文本
+TextUi *simulation_time_text = nullptr;         // 仿真时间文本
+TextUi *system_runtime_tip_text = nullptr;      // 系统运行时间提示文本
+TextUi *simulation_time_tip_text = nullptr;     // 仿真时间提示文本
+TextUi *simulation_speed_tip_text = nullptr;    // 仿真速度提示文本
+TextUi *simulation_speed_text = nullptr;        // 仿真速度文本
 /**
  * @brief 初始化主页面
  */
@@ -170,6 +172,12 @@ void main_page_Init(void)
     simulation_time_text->join(root);
 
     update_func_list.push_back(update_time_func);
+
+    simulation_speed_tip_text = new TextUi("仿真速度：", rm.getFont("deyi.ttf", 48), rm.getColor(DARKBLUE));
+    simulation_speed_tip_text->set_rect_midright(simulation_time_tip_text->rect.x + simulation_time_tip_text->rect.w, simulation_time_tip_text->rect.y + simulation_time_tip_text->rect.h + 48);
+    simulation_speed_tip_text->join(root);
+    simulation_speed_text = new TextUi(std::to_string(simulation_speed) + "x", rm.getFont("deyi.ttf", 48), rm.getColor(DARKBLUE), simulation_speed_tip_text->rect.x + simulation_speed_tip_text->rect.w + 8, simulation_speed_tip_text->rect.y + simulation_speed_tip_text->rect.h / 2);
+    simulation_speed_text->join(root);
 }
 
 

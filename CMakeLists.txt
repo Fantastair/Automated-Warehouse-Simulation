@@ -56,7 +56,7 @@ if (MSVC)
     )
 else()
     add_executable(${TARGET}
-    MACOSX_BUNDLE
+    # MACOSX_BUNDLE
     main.cpp
     info.rc
 

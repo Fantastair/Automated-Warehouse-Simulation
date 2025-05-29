@@ -10,9 +10,10 @@ std::string work_path;    // 工作目录
  */
 int main(int, char**)
 {
-    work_path = std::filesystem::current_path().string();    // 初始化工作目录
+    work_path = std::filesystem::current_path().string() + "/../../../..";    // 初始化工作目录
+    std::cout << "Current working directory: " << work_path << std::endl;
     RandomInit();                                            // 初始化随机数生成器
-    
+
     // Launch_Init();    // 启动界面初始化
 
     DataClass_Init();                                // 初始化底层数据类

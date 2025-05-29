@@ -6,6 +6,8 @@
 #include "../../SDL3.h"
 #include "../../Display.h"
 
+#define WINDOW_SCALE 0.8f
+
 SDL_Window *window = NULL;             // 窗口指针
 SDL_Renderer *renderer = NULL;         // 渲染器指针
 TTF_TextEngine *text_engine = NULL;    // 文本引擎指针
@@ -18,7 +20,22 @@ void Display_Init(int w, int h, SDL_WindowFlags flags)
     SDL_Init(SDL_INIT_VIDEO);
     TTF_Init();
 
-    SDL_CreateWindowAndRenderer(PROGRAM_NAME, w, h, flags, &window, &renderer);
+    SDL_Rect window_rect;
+    SDL_GetDisplayBounds(1, &window_rect);    // 获取显示器边界
+    // std::cout << "Display bounds: " << window_rect.x << ", " << window_rect.y << ", " << window_rect.w << ", " << window_rect.h << std::endl;
+    int w_, h_;
+    if (static_cast<float>(window_rect.w) / static_cast<float>(window_rect.h) > 16.0 / 9.0)
+    {
+        h_ = static_cast<int>(window_rect.h * WINDOW_SCALE);
+        w_ = static_cast<int>(h_ * 16 / 9.0f);
+    }
+    else
+    {
+        w_ = static_cast<int>(window_rect.w * WINDOW_SCALE);
+        h_ = static_cast<int>(w_ * 9 / 16.0f);
+    }
+    // SDL_CreateWindowAndRenderer(PROGRAM_NAME, w_, h_, flags, &window, &renderer);
+    SDL_CreateWindowAndRenderer(PROGRAM_NAME, 1280, 720, flags, &window, &renderer);
     SDL_SetRenderLogicalPresentation(renderer, w, h, SDL_LOGICAL_PRESENTATION_LETTERBOX);
     text_engine = TTF_CreateRendererTextEngine(renderer);
 
@@ -315,10 +332,7 @@ void Ui::set_rect_midbottom(float x, float y)        { this->rect.x = x - this->
 /**
  * @brief 初始化背景元素
  */
-BgUi::BgUi(void) : Ui(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
-{
-    Ui({0, 0, WINDOW_WIDTH, WINDOW_HEIGHT});
-}
+BgUi::BgUi(void) : Ui(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT) {}
 
 /**
  * @brief 初始化背景元素

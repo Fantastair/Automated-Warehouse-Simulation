@@ -4,6 +4,8 @@
 #include <unordered_map>
 #include <string>
 
+ extern std::string work_path;    // 工作目录
+
 /**
  * @brief 加载图像
  * @param path 图像路径
@@ -29,7 +31,7 @@ void ResourceManager::loadFont(const std::string &path, float font_size)
     TTF_Font *font = TTF_OpenFont(path.c_str(), font_size);
     if (font == nullptr)
     {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load font: %s", path.c_str());
+        // SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load font: %s", path.c_str());
         return;
     }
     fonts_[path + std::to_string(font_size)] = font;
@@ -44,7 +46,11 @@ void ResourceManager::loadColor(const std::string &color_name)
 {
     SDL_Color color;
     unsigned int r, g, b;
+    #ifdef MSVC_BUILD
     if (sscanf_s(color_name.c_str(), "#%02x%02x%02x", &r, &g, &b) != 3)
+    #else
+    if (sscanf(color_name.c_str(), "#%02x%02x%02x", &r, &g, &b) != 3)
+    #endif
     {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to parse color: %s", color_name.c_str());
         return;
@@ -68,7 +74,7 @@ void ResourceManager::loadColor(const std::string &color_name)
  */
 SDL_Texture* ResourceManager::getImage(const std::string &path)
 {
-    std::string file_path = IMAGE_PATH + path;    // 拼接图像路径
+    std::string file_path = work_path + IMAGE_PATH + path;    // 拼接图像路径
     auto iter = textures_.find(file_path);
     if (iter == textures_.end())
     {
@@ -91,7 +97,7 @@ SDL_Texture* ResourceManager::getImage(const std::string &path)
  */
 TTF_Font* ResourceManager::getFont(const std::string &path, float font_size)
 {
-    std::string file_path = FONT_PATH + path;    // 拼接字体路径
+    std::string file_path = work_path + FONT_PATH + path;    // 拼接字体路径
     auto iter = fonts_.find(file_path + std::to_string(font_size));
     if (iter == fonts_.end())
     {
@@ -100,7 +106,7 @@ TTF_Font* ResourceManager::getFont(const std::string &path, float font_size)
     }
     if (iter == fonts_.end())
     {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to get font: %s", file_path.c_str());
+        // SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to get font: %s", file_path.c_str());
         return nullptr;
     }
     return iter->second;

@@ -31,7 +31,7 @@ void main_page_Init(void);
 
 void update_car_pos(void);
 
-void update_car_pos_func(Uint64 dt);
-void update_time_func(Uint64 dt);
+void update_car_pos_func(Uint64);
+void update_time_func(Uint64);
 
 #endif

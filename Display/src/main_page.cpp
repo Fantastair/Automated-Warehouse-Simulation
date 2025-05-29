@@ -347,26 +347,23 @@ void update_car_pos(void)
  * @brief 更新穿梭车位置
  * @param dt 时间差，单位纳秒
  */
-void update_car_pos_func(Uint64 dt)
+void update_car_pos_func(Uint64)
 {
     if (Simulating)
     {
         update_car_pos();
         mark_update();
     }
-    return;
-    dt;
 }
 
 /**
  * @brief 更新时间文本
  */
-void update_time_func(Uint64 dt)
+void update_time_func(Uint64)
 {
-    system_runtime_text->set_text(NS2String(system_runtime), rm.getFont("deyi.ttf", 48), rm.getColor(DARKBLUE));
+    SDL_Color c = rm.getColor(DARKBLUE);
+    system_runtime_text->set_text(NS2String(system_runtime), rm.getFont("deyi.ttf", 48), c);
     system_runtime_text->set_rect_midleft(system_runtime_tip_text->rect.x + system_runtime_tip_text->rect.w + 8, system_runtime_tip_text->rect.y + system_runtime_tip_text->rect.h / 2);
-    simulation_time_text->set_text(NS2String(simulation_time), rm.getFont("deyi.ttf", 48), rm.getColor(DARKBLUE));
+    simulation_time_text->set_text(NS2String(simulation_time), rm.getFont("deyi.ttf", 48), c);
     simulation_time_text->set_rect_midleft(simulation_time_tip_text->rect.x + simulation_time_tip_text->rect.w + 8, simulation_time_tip_text->rect.y + simulation_time_tip_text->rect.h / 2);
-    return;
-    dt;
 }

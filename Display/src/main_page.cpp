@@ -178,6 +178,16 @@ void main_page_Init(void)
     simulation_speed_tip_text->join(root);
     simulation_speed_text = new TextUi(std::to_string(simulation_speed) + "x", rm.getFont("deyi.ttf", 48), rm.getColor(DARKBLUE), simulation_speed_tip_text->rect.x + simulation_speed_tip_text->rect.w + 8, simulation_speed_tip_text->rect.y + simulation_speed_tip_text->rect.h / 2);
     simulation_speed_text->join(root);
+
+    DragBarStyle speed_dragbar_style = {
+        rm.getColor_(THEMEBLUE),
+        rm.getColor_(DEEPWHITE),
+        rm.getColor_(DARKBLUE)
+    };
+    RectUi *drager = new RectUi(48, 48, 4, rm.getColor_(FAKEWHITE), rm.getColor_(DARKBLUE), 8);
+    DragBar *speed_dragbar = new DragBar(320, 20, 4, speed_dragbar_style, (Ui *)&drager);
+    speed_dragbar->set_rect_center(400, 800);
+    speed_dragbar->join(root);
 }
 
 
@@ -372,6 +382,9 @@ void update_time_func(Uint64)
     SDL_Color c = rm.getColor(DARKBLUE);
     system_runtime_text->set_text(NS2String(system_runtime), rm.getFont("deyi.ttf", 48), c);
     system_runtime_text->set_rect_midleft(system_runtime_tip_text->rect.x + system_runtime_tip_text->rect.w + 8, system_runtime_tip_text->rect.y + system_runtime_tip_text->rect.h / 2);
-    simulation_time_text->set_text(NS2String(simulation_time), rm.getFont("deyi.ttf", 48), c);
-    simulation_time_text->set_rect_midleft(simulation_time_tip_text->rect.x + simulation_time_tip_text->rect.w + 8, simulation_time_tip_text->rect.y + simulation_time_tip_text->rect.h / 2);
+    if (Simulating)
+    {
+        simulation_time_text->set_text(NS2String(simulation_time), rm.getFont("deyi.ttf", 48), c);
+        simulation_time_text->set_rect_midleft(simulation_time_tip_text->rect.x + simulation_time_tip_text->rect.w + 8, simulation_time_tip_text->rect.y + simulation_time_tip_text->rect.h / 2);
+    }
 }

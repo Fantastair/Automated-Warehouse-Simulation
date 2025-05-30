@@ -3,6 +3,7 @@
 
 #include <list>
 #include <string>
+// #include <functional>
 
 #define WINDOW_WIDTH 1920     // 窗口宽度
 #define WINDOW_HEIGHT 1080    // 窗口高度
@@ -40,9 +41,9 @@ public:
 
     SDL_FRect rect;             // 尺寸矩形
 
-    void (*handle_mbd_callback)(SDL_MouseButtonEvent &event);    // 鼠标按下回调函数
-    void (*handle_mbu_callback)(SDL_MouseButtonEvent &event);    // 鼠标抬起回调函数
-    void (*handle_mmv_callback)(SDL_MouseMotionEvent &event);    // 鼠标移动回调函数
+    std::function<void(SDL_MouseButtonEvent &event)> handle_mbd_callback;    // 鼠标按下回调函数
+    std::function<void(SDL_MouseButtonEvent &event)> handle_mbu_callback;    // 鼠标抬起回调函数
+    std::function<void(SDL_MouseMotionEvent &event)> handle_mmv_callback;    // 鼠标移动回调函数
 
     virtual void join(Ui &father_);                 // 加入父元素链表
     virtual void join(Ui *father_);                 // 加入父元素链表

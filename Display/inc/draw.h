@@ -1,6 +1,8 @@
 #ifndef __DRAW_H__
 #define __DRAW_H__
 
+#include "../../SDL3.h"
+
 void Draw_Circle(float centerx, float centery, float radius, float width=0, SDL_Color* bg=nullptr, SDL_Color* fg=nullptr);
 void Draw_Circle(float centerx, float centery, float radius, bool topleft_radius, bool topright_radius, bool bottomleft_radius, bool bottomright_radius, float width, SDL_Color* bg, SDL_Color* fg);
 

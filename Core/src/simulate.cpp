@@ -6,7 +6,7 @@
 
 bool thread_running = true;    // 仿真线程是否正在运行
 bool Simulating = false;       // 是否正在仿真
-int simulation_speed = 8;      // 仿真速度，单位倍数
+float simulation_speed = 8;      // 仿真速度，单位倍数
 Uint64 system_runtime = 0;     // 系统运行时间，单位纳秒
 Uint64 simulation_time = 0;    // 仿真时间，单位纳秒
 
@@ -34,7 +34,7 @@ void simulate(void)
  * @brief 设置仿真速度
  * @param speed 仿真速度倍数
  */
-void set_simulation_speed(int speed)
+void set_simulation_speed(float speed)
 {
     simulation_speed = speed;
 }
@@ -43,7 +43,7 @@ void set_simulation_speed(int speed)
  * @brief 获取仿真速度
  * @return 返回当前仿真速度倍数
  */
-int get_simulation_speed(void)
+float get_simulation_speed(void)
 {
     return simulation_speed;
 }

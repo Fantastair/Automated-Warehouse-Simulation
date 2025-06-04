@@ -17,12 +17,11 @@ int main(int, char**)
     // Launch_Init();    // 启动界面初始化
 
     DataClass_Init();                                // 初始化底层数据类
-    Display_Init(WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_HIGH_PIXEL_DENSITY);    // 初始化显示框架
-    // Display_Init(WINDOW_WIDTH, WINDOW_HEIGHT, 0);    // 初始化显示框架
+    Display_Init(0, 0, SDL_WINDOW_HIGH_PIXEL_DENSITY);    // 初始化显示框架
     pre_load(rm);                                    // 预加载资源
     main_page_Init();                                // 初始化主页面
     std::thread sim_thread(simulate);                // 创建仿真线程
-    Simulating = true;
+    // Simulating = true;
 
     Display_Mainloop();        // 主循环
 

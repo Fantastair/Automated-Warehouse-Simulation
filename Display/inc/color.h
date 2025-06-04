@@ -1,7 +1,7 @@
 #ifndef __COLOR_H__
 #define __COLOR_H__
 
-// #define DARKMODE
+#define DARKMODE
 
 #define BLACK       "#000000"
 #define WHITE       "#ffffff"

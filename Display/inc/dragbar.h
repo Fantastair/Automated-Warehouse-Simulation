@@ -10,6 +10,8 @@ typedef struct
     SDL_Color *fg;     // 前景色
 } DragBarStyle;        // 拖动条样式
 
+class DragBarMouseWidget;    // 前向声明拖动条鼠标组件类
+
 class DragBar : public RectUi
 {
 public:
@@ -18,11 +20,22 @@ public:
     Ui *Drager;                // 拖动对象
     double process;            // 进度
 
+    DragBarMouseWidget *mousewidget;    // 鼠标组件
+
     DragBar(float width, float height, float bd_, DragBarStyle &style, Ui *drager);
 
-    void press_drager_callback(SDL_MouseButtonEvent &event);    // 鼠标按下拖动对象回调函数
-    void release_drager_callback(SDL_MouseButtonEvent &event);  // 鼠标释放拖动对象回调函数
-    void move_drager_callback(SDL_MouseMotionEvent &event);     // 鼠标移动拖动对象回调函数
+    virtual void set_process(float p);
+};
+
+class DragBarMouseWidget : public MouseBaseWidget
+{
+public:
+    DragBarMouseWidget(DragBar *dragbar_);
+    DragBarMouseWidget(DragBar &dragbar_);
+    virtual ~DragBarMouseWidget(void) override;
+
+    virtual void mousepress(float x, float y, Uint8 button) override;
+    virtual void mousemove(float x, float y) override;
 };
 
 

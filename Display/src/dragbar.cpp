@@ -17,23 +17,81 @@ DragBar::DragBar(float width, float height, float bd_, DragBarStyle &style, Ui *
     left_fill_bar->set_rect_midleft(bd_ / 2, height / 2);
     rigth_fill_bar->set_rect_midright(width - bd_ / 2, height / 2);
     Drager = drager;
+    Drager->set_rect_center(height / 2, height / 2);
     left_fill_bar->join(this);
     rigth_fill_bar->join(this);
-    // Drager->join(this);
-    Drager->handle_mbd_callback = std::bind(&DragBar::press_drager_callback, this, std::placeholders::_1);
-    Drager->handle_mbu_callback = std::bind(&DragBar::release_drager_callback, this, std::placeholders::_1);
-    Drager->handle_mmv_callback = std::bind(&DragBar::move_drager_callback, this, std::placeholders::_1);
+    Drager->join(this);
+
+    mousewidget = new DragBarMouseWidget(this);
+    mousewidget->activate();
 }
 
-void DragBar::press_drager_callback(SDL_MouseButtonEvent &event)
+/**
+ * @brief 设置拖动条进度
+ * @param p 进度值，范围0.0到1.0
+ */
+void DragBar::set_process(float p)
 {
-    std::cout << event.x << " " << event.y << std::endl;
+    left_fill_bar->set_rect_width((rect.w - bd) * p);
+    left_fill_bar->set_rect_left(bd / 2);
+    rigth_fill_bar->set_rect_width((rect.w - bd) * (1.0 - p));
+    rigth_fill_bar->set_rect_right(rect.w - bd / 2);
+    process = p;
+    Drager->set_rect_centerx(bd / 2 + (rect.w - bd) * p);
 }
 
-void DragBar::release_drager_callback(SDL_MouseButtonEvent &event)
+/**
+ * @brief 拖动条鼠标组件构造函数
+ * @param dragbar_ 拖动条指针
+ */
+DragBarMouseWidget::DragBarMouseWidget(DragBar *dragbar_) : MouseBaseWidget(dragbar_) {}
+
+/**
+ * @brief 拖动条鼠标组件构造函数
+ * @param dragbar_ 拖动条引用
+ */
+DragBarMouseWidget::DragBarMouseWidget(DragBar &dragbar_) : MouseBaseWidget(dragbar_) {}
+
+/**
+ * @brief 拖动条鼠标组件析构函数
+ */
+DragBarMouseWidget::~DragBarMouseWidget(void) {}
+
+/**
+ * @brief 鼠标按下事件处理
+ * @param x 鼠标X坐标
+ * @param y 鼠标Y坐标
+ * @param button 鼠标按键
+ */
+void DragBarMouseWidget::mousepress(float x, [[maybe_unused]] float y, [[maybe_unused]] Uint8 button)
 {
+    if (mouseon)
+    {
+        ((DragBar *)ui)->set_process((x - ui->rect.x - ((DragBar *)ui)->bd / 2) / (ui->rect.w - ((DragBar *)ui)->bd));
+    }
 }
 
-void DragBar::move_drager_callback(SDL_MouseMotionEvent &event)
+/**
+ * @brief 鼠标移动事件处理
+ * @param x 鼠标X坐标
+ * @param y 鼠标Y坐标
+ */
+void DragBarMouseWidget::mousemove(float x, [[maybe_unused]] float y)
 {
+    if (mousedown == SDL_BUTTON_LEFT)
+    {
+        if (x < ui->rect.x + ((DragBar *)ui)->bd / 2)
+        {
+            x = ui->rect.x + ((DragBar *)ui)->bd / 2;
+        }
+        else if (x > ui->rect.x + ui->rect.w - ((DragBar *)ui)->bd / 2)
+        {
+            x = ui->rect.x + ui->rect.w - ((DragBar *)ui)->bd / 2;
+        }
+        double p = (x - ui->rect.x - ((DragBar *)ui)->bd / 2) / (ui->rect.w - ((DragBar *)ui)->bd);
+        if (p != ((DragBar *)ui)->process)
+        {
+            ((DragBar *)ui)->set_process(p);
+        }
+    }
 }

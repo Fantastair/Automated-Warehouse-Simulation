@@ -1,6 +1,8 @@
 #ifndef __MAIN_PAGE_H__
 #define __MAIN_PAGE_H__
 
+#include "../../Display.h"
+
 #define ZOOM_FACTOR 0.04f    // 缩放因子
 
 class CarUi : public Ui
@@ -27,11 +29,22 @@ public:
 
 extern CarUi *carui_list[7];
 
+class SpeedDragBar : public DragBar
+{
+public:
+    SpeedDragBar(float width, float height, float bd_, DragBarStyle &style, Ui *drager);
+
+    virtual void set_process(float p);
+};
+
 void main_page_Init(void);
 
 void update_car_pos(void);
 
 void update_car_pos_func(Uint64);
 void update_time_func(Uint64);
+void update_speed_func(Uint64);
+
+void switch_simulation(void);
 
 #endif

@@ -46,5 +46,14 @@ void update_time_func(Uint64);
 void update_speed_func(Uint64);
 
 void switch_simulation(void);
+void reset_simulation(void);
+void random_task(void);
+void file_task(void);
+
+void set_simulation_speed_1x(void);
+void set_simulation_speed_4x(void);
+void set_simulation_speed_8x(void);
+void set_simulation_speed_16x(void);
+void set_simulation_speed_32x(void);
 
 #endif

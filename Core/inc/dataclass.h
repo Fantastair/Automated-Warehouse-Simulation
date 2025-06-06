@@ -1,6 +1,7 @@
 #ifndef __DATACLASS_H__
 #define __DATACLASS_H__
 
+#include <list>
 #include "../../SDL3.h"
 
 // 轨道尺寸
@@ -32,11 +33,12 @@
 
 enum class CarState    // 车辆状态
 {
-    CarIdle = 0,    // 空闲
-    CarGetting,     // 正在获取货物
-    CarPutting,     // 正在放置货物
-    CarToGet,       // 前往取货点
-    CarToPut,       // 前往收货点
+    CarIdle = 0,     // 空闲
+    CarToGet,        // 前往取货点
+    CarGetting,      // 正在获取货物
+    CarToPut,        // 前往收货点
+    CarWaitToPut,    // 等待放置货物
+    CarPutting,      // 正在放置货物
 };
 
 enum class ConnectorState     // 接口设备状态
@@ -45,6 +47,15 @@ enum class ConnectorState     // 接口设备状态
     WaitForCar,           // 有货，等待穿梭车到达
     WorkWithCar,          // 与穿梭车交接货物
     WorkWithOther,        // 与其他对象（库存/操作人员）交接货物
+    CallingCar,           // 呼叫穿梭车
+};
+
+enum class ConnectorType    // 接口设备类型
+{
+    CarToStoration = 0,    // 入库接口设备
+    StorationToCar,        // *出库接口设备
+    CarToPerson,           // 出库口
+    PersonToCar,           // *入库口
 };
 
 typedef struct 
@@ -71,15 +82,17 @@ int GetTrackIndex(double pos);
 class ShuttleCar
 {
 public:
-    int id;                    // 车辆编号
-    CarState state;            // 车辆状态
-    double speed;              // 车辆速度，mm/ns
-    double position;           // 车辆位置，mm
-    double initial_pos;        // 车辆初始位置，mm
-    CarTask task;              // 车辆任务
-    ShuttleCar *front;         // 前一辆车的指针
-    ShuttleCar *back;          // 后一辆车的指针
-    Uint64 time_temp;          // 临时时间戳，用于统计时间
+    int id;                     // 车辆编号
+    CarState state;             // 车辆状态
+    double speed;               // 车辆速度，mm/ns
+    double position;            // 车辆位置，mm
+    double initial_pos;         // 车辆初始位置，mm
+    CarTask task;               // 车辆任务
+    ShuttleCar *front;          // 前一辆车的指针
+    ShuttleCar *back;           // 后一辆车的指针
+    Uint64 time_temp;           // 临时时间戳，用于统计时间
+    double maxspeed_stright;    // 最大直轨速度，mm/ns
+    double maxspeed_curve;      // 最大弯轨速度，mm/ns
 
     ShuttleCar(int id_);
 
@@ -91,6 +104,7 @@ public:
 extern ShuttleCar CarList[7];
 extern int CarNum;
 ShuttleCar* GetFreeCar(void);
+ShuttleCar* GetFreeCar(int id);
 
 /**
  * @brief 接口设备
@@ -98,10 +112,18 @@ ShuttleCar* GetFreeCar(void);
 class Connector
 {
 public:
-    ConnectorState state;    // 接口状态
-    Uint64 worktime;         // 工作时间，从交接开始记录时长
+    ConnectorState state;            // 接口状态
+    ConnectorType type;              // 接口类型
+    int id;                          // 接口编号
+    Uint64 time_temp;                // 工作时间，从交接开始记录时长
+    double position;                 // 接口位置，mm
+    std::list<CarTask> task_list;    // 任务列表，存储等待的任务
 
-    Connector() : state(ConnectorState::ConnectorIdle), worktime(0) {}
+    Connector(int num);
+    void init();
+    void update(Uint64 dt);
+    Uint64 get_load_time(void);
+    void start_work_with_car(void);
 };
 extern Connector ConnectorList[18];
 

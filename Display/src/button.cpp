@@ -27,7 +27,7 @@ void AnyButtonMouseWidget::mouseclick(void)
  * @param height 按钮高度
  * @param style_ 按钮样式
  */
-Button::Button(float width, float height, ButtonStyle &style_) : RectUi(width, height, style_.normal_bd, style_.normal_bg, style_.normal_fg, style_.normal_radius), style(style_), enabled(true), state(BUTTON_STATE_NORMAL)
+Button::Button(float width, float height, ButtonStyle &style_) : RectUi(width, height, style_.normal_bd, style_.normal_bg, style_.normal_fg, style_.normal_radius), style(style_), state(BUTTON_STATE_NORMAL)
 {
     mousewidget = new ButtonMouseWidget(this);
     mousewidget->activate();
@@ -51,7 +51,6 @@ Button::~Button(void)
  */
 void Button::disable(void)
 {
-    enabled = false;
     mousewidget->deactivate();
     this->set_state(BUTTON_STATE_DISABLE);
 }
@@ -61,7 +60,6 @@ void Button::disable(void)
  */
 void Button::enable(void)
 {
-    enabled = true;
     mousewidget->activate();
     this->set_state(BUTTON_STATE_NORMAL);
 }

@@ -55,7 +55,10 @@ float get_simulation_speed(void)
  */
 void update_simulation(Uint64 t)
 {
-    // 在该函数里实现仿真逻辑
+    for (int i = 0; i < 18; i++)
+    {
+        ConnectorList[17 - i].update(t);  // 更新接口设备状态
+    }
     int j = GetFreeCar()->id;
     for (int i = j; i < CarNum + j; i++)
     {

@@ -6,7 +6,8 @@
 #include "../../Display.h"
 
 #define GRID_SIZE 60
-
+#define INCOLOR GREEN
+#define OUTCOLOR ORANGE
 
 ButtonStyle NORMAL_BUTTON_STYLE;
 
@@ -19,9 +20,20 @@ public:
     int index;              // 接口索引
     static float WIDTH;     // 接口宽度
     static float HEIGHT;    // 接口高度
+    RectUi *fill_rect;      // 填充矩形，用于显示接口状态
 
     ConnectorUi(int i) : RectUi(WIDTH, HEIGHT, 4, nullptr, rm.getColor_(DARKBLUE), 8), index(i)
     {
+        fill_rect = new RectUi(WIDTH - 4, 0, 0, nullptr, nullptr, radius - bd / 2);
+        fill_rect->join(this);
+        if ((i < 12 && i % 2 == 0) || i >= 15)
+        {
+            fill_rect->bg = rm.getColor_(INCOLOR);
+        }
+        else
+        {
+            fill_rect->bg = rm.getColor_(OUTCOLOR);
+        }
         TextUi *arrow = nullptr;
         TextUi *index_text = new TextUi(std::to_string(i + 1), rm.getFont("deyi.ttf", 24), rm.getColor(DARKBLUE));
         if (i < 12)
@@ -54,6 +66,58 @@ public:
         arrow->join(this);
         index_text->join(this);
     }
+
+    virtual void render(float left, float top)
+    {
+        switch (ConnectorList[index].state)
+        {
+        case ConnectorState::ConnectorIdle:
+            break;
+        case ConnectorState::WaitForCar:
+            break;
+        case ConnectorState::WorkWithCar:
+            if (ConnectorList[index].type == ConnectorType::CarToStoration || ConnectorList[index].type == ConnectorType::CarToPerson)
+            {
+                fill_rect->set_rect_height((HEIGHT - bd) * ConnectorList[index].time_temp / LOADTIME);
+            }
+            else
+            {
+                fill_rect->set_rect_height((HEIGHT - bd) * (LOADTIME - ConnectorList[index].time_temp) / LOADTIME);
+            }
+            if (index < 12)
+            {
+                fill_rect->set_rect_bottomleft(bd / 2, HEIGHT - bd / 2);
+            }
+            else
+            {
+                fill_rect->set_rect_topleft(bd / 2, bd / 2);
+            }
+            break;
+        case ConnectorState::WorkWithOther:
+            if (ConnectorList[index].type == ConnectorType::CarToStoration || ConnectorList[index].type == ConnectorType::CarToPerson)
+            {
+                fill_rect->set_rect_height((HEIGHT - bd) * (ConnectorList[index].get_load_time() - ConnectorList[index].time_temp) / ConnectorList[index].get_load_time());
+            }
+            else
+            {
+                fill_rect->set_rect_height((HEIGHT - bd) * ConnectorList[index].time_temp / ConnectorList[index].get_load_time());
+            }
+            if (index < 12)
+            {
+                fill_rect->set_rect_topleft(bd / 2, bd / 2);
+            }
+            else
+            {
+                fill_rect->set_rect_bottomleft(bd / 2, HEIGHT - bd / 2);
+            }
+            break;
+        case ConnectorState::CallingCar:
+            break;
+        default:
+            break;
+        }
+        RectUi::render(left, top);
+    }
 };
 float ConnectorUi::WIDTH = CONNECTOR_WIDTH * ZOOM_FACTOR;
 float ConnectorUi::HEIGHT = (CONNECTOR_WIDTH * 2) * ZOOM_FACTOR;
@@ -65,21 +129,23 @@ TextUi *system_runtime_tip_text = nullptr;          // 系统运行时间提示�
 TextUi *simulation_time_tip_text = nullptr;         // 仿真时间提示文本
 TextUi *simulation_speed_tip_text = nullptr;        // 仿真速度提示文本
 TextUi *simulation_speed_text = nullptr;            // 仿真速度文本
+SpeedDragBar *speed_dragbar = nullptr;              // 仿真速度拖动条
 TextUi *switch_simulation_button_text = nullptr;    // 开始/暂停仿真按钮文本
 Button *switch_simulation_button = nullptr;         // 开始/暂停仿真按钮
 Button *reset_simulation_button = nullptr;          // 重置仿真按钮
 Button *random_task_button = nullptr;               // 随机执行任务按钮
 Button *file_task_button = nullptr;                 // 从文件导入任务按钮
+
 /**
  * @brief 初始化主页面
  */
 void main_page_Init(void)
 {
     NORMAL_BUTTON_STYLE = {
-        rm.getColor_(FAKEWHITE), rm.getColor_(DARKBLUE), 4, 8,
-        rm.getColor_(DEEPWHITE), rm.getColor_(DARKBLUE), 4, 8,
-        rm.getColor_(DARKBLUE), rm.getColor_(FAKEWHITE), 4, 8,
-        rm.getColor_(DEEPWHITE), rm.getColor_(DARKBLUE), 4, 8
+        rm.getColor_(FAKEWHITE), rm.getColor_(DARKBLUE), 2, 16,
+        rm.getColor_(DEEPWHITE), rm.getColor_(DARKBLUE), 4, 16,
+        rm.getColor_(GRAY), rm.getColor_(DARKBLUE), 4, 16,
+        rm.getColor_(GRAY), rm.getColor_(GRAY), 2, 16
     };
 
     root = new BgUi(rm.getColor(FAKEWHITE));
@@ -146,10 +212,10 @@ void main_page_Init(void)
     outer_track->join(root);
 
     RectUi *goods_in_legend = new RectUi(30, 30, 4, rm.getColor_(GREEN), rm.getColor_(DARKBLUE), 4);
-    goods_in_legend->set_rect_midtop(120, 480);
+    goods_in_legend->set_rect_midtop(1715, 45);
     goods_in_legend->join(root);
     RectUi *goods_out_legend = new RectUi(30, 30, 4, rm.getColor_(ORANGE), rm.getColor_(DARKBLUE), 4);
-    goods_out_legend->set_rect_midtop(120, 540);
+    goods_out_legend->set_rect_midtop(1715, 90);
     goods_out_legend->join(root);
     TextUi *goods_in_text = new TextUi("入库货物", rm.getFont("deyi.ttf", 32), rm.getColor(DARKBLUE), goods_in_legend->rect.x + goods_in_legend->rect.w + 8, goods_in_legend->rect.y + goods_in_legend->rect.h / 2);
     goods_in_text->join(root);
@@ -160,6 +226,7 @@ void main_page_Init(void)
     {
         connectorui_list[i] = new ConnectorUi(i);
         connectorui_list[i]->join(root);
+        ConnectorList[i].init();
     }
     for (int i = 0; i < 7; i++)
     {
@@ -167,10 +234,23 @@ void main_page_Init(void)
         CarList[i].init();
     }
 
-    for (int i = 0; i < CarNum; i++)
+    for (int i = 0; i < 108; i++)
     {
-        GenerateRandomTask(CarList[i].task);
+        CarTask task;
+        GenerateRandomTask(task);
+        ConnectorList[task.start_connector].task_list.push_back(task);
     }
+    for (int i = 0; i < 18; i++)
+    {
+        if (!ConnectorList[i].task_list.empty())
+        {
+            ConnectorList[i].state = ConnectorState::WorkWithOther;
+            ConnectorList[i].time_temp = ConnectorList[i].get_load_time();
+        }
+    }
+    // ConnectorList[15].task_list.push_back({ 15, 0, 0 });
+    // ConnectorList[16].task_list.push_back({ 16, 10, 0 });
+    // ConnectorList[17].task_list.push_back({ 17, 6, 0 });
 
     update_car_pos();
     update_func_list.push_back(update_car_pos_func);
@@ -197,10 +277,64 @@ void main_page_Init(void)
 
     DragBarStyle speed_dragbar_style = { rm.getColor_(THEMEBLUE), rm.getColor_(DEEPWHITE), rm.getColor_(DARKBLUE) };
     RectUi *drager = new RectUi(48, 48, 4, rm.getColor_(FAKEWHITE), rm.getColor_(DARKBLUE), 16);
-    SpeedDragBar *speed_dragbar = new SpeedDragBar(480, 20, 4, speed_dragbar_style, (Ui *)drager);
+    speed_dragbar = new SpeedDragBar(480, 20, 4, speed_dragbar_style, (Ui *)drager);
     speed_dragbar->set_rect_center(280, 894);
-    speed_dragbar->join(root);
     speed_dragbar->set_process((simulation_speed - 0.5) / (32 - 0.5)); // 设置初始进度
+
+    AnyButtonMouseWidget *fast_set_speed_button = nullptr;
+    RectUi *scale_line = nullptr;
+
+    TextUi *fast_set_speed_text_1x = new TextUi("1x", rm.getFont("deyi.ttf", 24), rm.getColor(DARKBLUE));
+    fast_set_speed_text_1x->set_rect_center(speed_dragbar->rect.x + speed_dragbar->bd / 2 + (speed_dragbar->rect.w - speed_dragbar->bd) * (1.0 - 0.5) / (32 - 0.5), speed_dragbar->rect.y + speed_dragbar->rect.h + 32);
+    fast_set_speed_text_1x->join(root);
+    scale_line = new RectUi(2, 16, 0, rm.getColor_(DARKBLUE), nullptr);
+    scale_line->set_rect_midtop(fast_set_speed_text_1x->rect.x + fast_set_speed_text_1x->rect.w / 2, speed_dragbar->rect.y + speed_dragbar->rect.h);
+    scale_line->join(root);
+    fast_set_speed_button = new AnyButtonMouseWidget(fast_set_speed_text_1x);
+    fast_set_speed_button->bind(set_simulation_speed_1x);
+    fast_set_speed_button->activate();
+
+    TextUi *fast_set_speed_text_4x = new TextUi("4x", rm.getFont("deyi.ttf", 24), rm.getColor(DARKBLUE));
+    fast_set_speed_text_4x->set_rect_center(speed_dragbar->rect.x + speed_dragbar->bd / 2 + (speed_dragbar->rect.w - speed_dragbar->bd) * (4.0 - 0.5) / (32 - 0.5), speed_dragbar->rect.y + speed_dragbar->rect.h + 32);
+    fast_set_speed_text_4x->join(root);
+    scale_line = new RectUi(2, 16, 0, rm.getColor_(DARKBLUE), nullptr);
+    scale_line->set_rect_midtop(fast_set_speed_text_4x->rect.x + fast_set_speed_text_4x->rect.w / 2, speed_dragbar->rect.y + speed_dragbar->rect.h);
+    scale_line->join(root);
+    fast_set_speed_button = new AnyButtonMouseWidget(fast_set_speed_text_4x);
+    fast_set_speed_button->bind(set_simulation_speed_4x);
+    fast_set_speed_button->activate();
+
+    TextUi *fast_set_speed_text_8x = new TextUi("8x", rm.getFont("deyi.ttf", 24), rm.getColor(DARKBLUE));
+    fast_set_speed_text_8x->set_rect_center(speed_dragbar->rect.x + speed_dragbar->bd / 2 + (speed_dragbar->rect.w - speed_dragbar->bd) * (8.0 - 0.5) / (32 - 0.5), speed_dragbar->rect.y + speed_dragbar->rect.h + 32);
+    fast_set_speed_text_8x->join(root);
+    scale_line = new RectUi(2, 16, 0, rm.getColor_(DARKBLUE), nullptr);
+    scale_line->set_rect_midtop(fast_set_speed_text_8x->rect.x + fast_set_speed_text_8x->rect.w / 2, speed_dragbar->rect.y + speed_dragbar->rect.h);
+    scale_line->join(root);
+    fast_set_speed_button = new AnyButtonMouseWidget(fast_set_speed_text_8x);
+    fast_set_speed_button->bind(set_simulation_speed_8x);
+    fast_set_speed_button->activate();
+
+    TextUi *fast_set_speed_text_16x = new TextUi("16x", rm.getFont("deyi.ttf", 24), rm.getColor(DARKBLUE));
+    fast_set_speed_text_16x->set_rect_center(speed_dragbar->rect.x + speed_dragbar->bd / 2 + (speed_dragbar->rect.w - speed_dragbar->bd) * (16.0 - 0.5) / (32 - 0.5), speed_dragbar->rect.y + speed_dragbar->rect.h + 32);
+    fast_set_speed_text_16x->join(root);
+    scale_line = new RectUi(2, 16, 0, rm.getColor_(DARKBLUE), nullptr);
+    scale_line->set_rect_midtop(fast_set_speed_text_16x->rect.x + fast_set_speed_text_16x->rect.w / 2, speed_dragbar->rect.y + speed_dragbar->rect.h);
+    scale_line->join(root);
+    fast_set_speed_button = new AnyButtonMouseWidget(fast_set_speed_text_16x);
+    fast_set_speed_button->bind(set_simulation_speed_16x);
+    fast_set_speed_button->activate();
+
+    TextUi *fast_set_speed_text_32x = new TextUi("32x", rm.getFont("deyi.ttf", 24), rm.getColor(DARKBLUE));
+    fast_set_speed_text_32x->set_rect_center(speed_dragbar->rect.x + speed_dragbar->bd / 2 + (speed_dragbar->rect.w - speed_dragbar->bd) * (32.0 - 0.5) / (32 - 0.5), speed_dragbar->rect.y + speed_dragbar->rect.h + 32);
+    fast_set_speed_text_32x->join(root);
+    scale_line = new RectUi(2, 16, 0, rm.getColor_(DARKBLUE), nullptr);
+    scale_line->set_rect_midtop(fast_set_speed_text_32x->rect.x + fast_set_speed_text_32x->rect.w / 2, speed_dragbar->rect.y + speed_dragbar->rect.h);
+    scale_line->join(root);
+    fast_set_speed_button = new AnyButtonMouseWidget(fast_set_speed_text_32x);
+    fast_set_speed_button->bind(set_simulation_speed_32x);
+    fast_set_speed_button->activate();
+
+    speed_dragbar->join(root);
 
     switch_simulation_button = new Button(64, 64, NORMAL_BUTTON_STYLE);
     switch_simulation_button->set_rect_center(80, 1000);
@@ -209,27 +343,36 @@ void main_page_Init(void)
     switch_simulation_button_text->set_rect_center(switch_simulation_button->rect.w / 2, switch_simulation_button->rect.h / 2);
     switch_simulation_button_text->join(switch_simulation_button);
     switch_simulation_button->bind(switch_simulation);
-    
+
     reset_simulation_button = new Button(64, 64, NORMAL_BUTTON_STYLE);
     reset_simulation_button->set_rect_center(switch_simulation_button->rect.x + switch_simulation_button->rect.w / 2 + 128, 1000);
     reset_simulation_button->join(root);
     RectUi *reset_simulation_button_text = new RectUi(32, 32, 0, rm.getColor_(DARKBLUE), nullptr, 8);
     reset_simulation_button_text->set_rect_center(reset_simulation_button->rect.w / 2, reset_simulation_button->rect.h / 2);
     reset_simulation_button_text->join(reset_simulation_button);
-    
+    reset_simulation_button->disable();
+    reset_simulation_button->bind(reset_simulation);
+
     random_task_button = new Button(64, 64, NORMAL_BUTTON_STYLE);
     random_task_button->set_rect_center(reset_simulation_button->rect.x + reset_simulation_button->rect.w / 2 + 128, 1000);
     random_task_button->join(root);
     TextUi *random_task_button_text = new TextUi(ICON_RANDOM, rm.getFont("iconfont.ttf", 32), rm.getColor(DARKBLUE));
     random_task_button_text->set_rect_center(random_task_button->rect.w / 2, random_task_button->rect.h / 2);
     random_task_button_text->join(random_task_button);
-    
+    random_task_button->bind(random_task);
+
     file_task_button = new Button(64, 64, NORMAL_BUTTON_STYLE);
     file_task_button->set_rect_center(random_task_button->rect.x + random_task_button->rect.w / 2 + 128, 1000);
     file_task_button->join(root);
     TextUi *file_task_button_text = new TextUi(ICON_FILE, rm.getFont("iconfont.ttf", 32), rm.getColor(DARKBLUE));
     file_task_button_text->set_rect_center(file_task_button->rect.w / 2, file_task_button->rect.h / 2);
     file_task_button_text->join(file_task_button);
+    file_task_button->bind(file_task);
+
+    float t = split_line->rect.y + split_line->rect.h;
+    split_line = new RectUi(8, WINDOW_HEIGHT - t - 8, 0, rm.getColor_(DARKBLUE), nullptr);
+    split_line->set_rect_midtop(560, t);
+    split_line->join(root);
 }
 
 
@@ -281,7 +424,7 @@ void CarUi::update_surface(void)
 
     // 绘制车辆
     Draw_Rect_Surface(surface, progress_bar->rect, 0, progress_bar->bg, nullptr);
-    Draw_Rect_Surface(surface, {0, 0, WIDTH, HEIGHT}, 8, nullptr, rm.getColor_(THEMEBLUE), 8);
+    Draw_Rect_Surface(surface, {0, 0, WIDTH, HEIGHT}, 8, nullptr, rm.getColor_((CarList[num].state != CarState::CarIdle) ? THEMEBLUE : GRAY), 8);
 
     SDL_LockSurface(surface);
 }
@@ -469,6 +612,9 @@ void update_speed_func(Uint64)
     simulation_speed_text->set_rect_midleft(simulation_speed_tip_text->rect.x + simulation_speed_tip_text->rect.w + 8, simulation_speed_tip_text->rect.y + simulation_speed_tip_text->rect.h / 2);
 }
 
+/**
+ * @brief 开始/暂停仿真
+ */
 void switch_simulation(void)
 {
     SDL_Color c = rm.getColor(DARKBLUE);
@@ -481,5 +627,78 @@ void switch_simulation(void)
     {
         Simulating = true;
         switch_simulation_button_text->set_text(ICON_PAUSE, rm.getFont("iconfont.ttf", 32), c);
+        if (reset_simulation_button->state == BUTTON_STATE_DISABLE)
+        {
+            reset_simulation_button->enable();
+        }
     }
+}
+
+/**
+ * @brief 重置仿真
+ */
+void reset_simulation(void)
+{
+
+}
+
+/**
+ * @brief 随机执行任务
+ */
+void random_task(void)
+{
+
+}
+
+/**
+ * @brief 从文件导入任务
+ */
+void file_task(void)
+{
+
+}
+
+/**
+ * @brief 快速设置仿真速度为1x
+ */
+void set_simulation_speed_1x(void)
+{
+    set_simulation_speed(1.0);
+    speed_dragbar->set_process((1.0 - 0.5) / (32 - 0.5));
+}
+
+/**
+ * @brief 快速设置仿真速度为4x
+ */
+void set_simulation_speed_4x(void)
+{
+    set_simulation_speed(4.0);
+    speed_dragbar->set_process((4.0 - 0.5) / (32 - 0.5));
+}
+
+/**
+ * @brief 快速设置仿真速度为8x
+ */
+void set_simulation_speed_8x(void)
+{
+    set_simulation_speed(8.0);
+    speed_dragbar->set_process((8.0 - 0.5) / (32 - 0.5));
+}
+
+/**
+ * @brief 快速设置仿真速度为16x
+ */
+void set_simulation_speed_16x(void)
+{
+    set_simulation_speed(16.0);
+    speed_dragbar->set_process((16.0 - 0.5) / (32 - 0.5));
+}
+
+/**
+ * @brief 快速设置仿真速度为32x
+ */
+void set_simulation_speed_32x(void)
+{
+    set_simulation_speed(32.0);
+    speed_dragbar->set_process((32.0 - 0.5) / (32 - 0.5));
 }

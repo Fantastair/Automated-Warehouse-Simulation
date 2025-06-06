@@ -57,7 +57,6 @@ public:
     ButtonStyle &style;                // 按钮样式
 
     ButtonMouseWidget *mousewidget;    // 鼠标组件
-    bool enabled;                      // 按钮是否启用
     ButtonState state;                 // 按钮状态
 
     Button(float width, float height, ButtonStyle &style_);

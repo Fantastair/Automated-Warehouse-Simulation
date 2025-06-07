@@ -5,9 +5,12 @@
 
 extern bool thread_running;
 extern bool Simulating;
+extern float simulation_speed;
+extern Uint64 system_runtime;
+extern Uint64 simulation_time;
 
-void set_simulation_speed(int speed);
-int get_simulation_speed(void);
+void set_simulation_speed(float speed);
+float get_simulation_speed(void);
 
 void simulate(void);
 void update_simulation(Uint64 t);

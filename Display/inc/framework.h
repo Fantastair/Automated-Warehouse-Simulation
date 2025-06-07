@@ -3,6 +3,7 @@
 
 #include <list>
 #include <string>
+// #include <functional>
 
 #define WINDOW_WIDTH 1920     // 窗口宽度
 #define WINDOW_HEIGHT 1080    // 窗口高度
@@ -24,6 +25,8 @@ void update(Uint64 dt);
 typedef void (*UpdateFunc)(Uint64 dt);            // 更新函数类型
 extern std::list<UpdateFunc> update_func_list;    // 更新函数列表
 
+class Widget;    // 前向声明组件类
+
 /**
  * @brief 显示元素基类
  */
@@ -35,23 +38,20 @@ public:
     Ui(float left, float top, float width, float height);
     virtual ~Ui(void);
 
-    Ui* father;                 // 父元素指针
-    std::list<Ui*> kidgroup;    // 子元素链表
+    Ui* father;                        // 父元素指针
+    std::list<Ui*> kidgroup;           // 子元素链表
+    std::list<Widget*> widgetgroup;    // 组件链表
 
     SDL_FRect rect;             // 尺寸矩形
 
-    void (*handle_mbd_callback)(SDL_MouseButtonEvent &event);    // 鼠标按下回调函数
-    void (*handle_mbu_callback)(SDL_MouseButtonEvent &event);    // 鼠标抬起回调函数
-    void (*handle_mmv_callback)(SDL_MouseMotionEvent &event);    // 鼠标移动回调函数
-
-    virtual void join(Ui &father_);                 // 加入父元素链表
-    virtual void join(Ui *father_);                 // 加入父元素链表
-    virtual void join(Ui &father_, int index);      // 加入父元素链表到指定位置
-    virtual void join(Ui *father_, int index);      // 加入父元素链表到指定位置
+    virtual void join(Ui &father_);                // 加入父元素链表
+    virtual void join(Ui *father_);                // 加入父元素链表
+    virtual void join(Ui &father_, int index);     // 加入父元素链表到指定位置
+    virtual void join(Ui *father_, int index);     // 加入父元素链表到指定位置
     virtual void leave(void);                      // 离开父元素链表
 
+    virtual void handle(SDL_Event &event);         // 事件处理
     virtual void render(float left, float top);    // 渲染函数
-    virtual void HandleEvent(SDL_Event &event);    // 事件处理函数
 
     virtual void set_rect_left(float left);                   // 设置左边距
     virtual void set_rect_right(float right);                 // 设置右边距
@@ -120,6 +120,8 @@ public:
     ~TextUi(void);
 
     virtual void render(float left, float top);    // 渲染函数
+
+    virtual void set_text(const std::string &text_, TTF_Font *font_, SDL_Color &color);    // 设置文本内容
 };
 
 
@@ -135,12 +137,55 @@ public:
     float bottom_left_radius;     // 左下角圆角半径
     float bottom_right_radius;    // 右下角圆角半径
 
-    RectUi(float width, float height, float bd, SDL_Color *bg, SDL_Color *fg);
-    RectUi(float width, float height, float bd, SDL_Color *bg, SDL_Color *fg, float radius);
-    RectUi(float width, float height, float bd, SDL_Color *bg, SDL_Color *fg, float topleft_radius, float topright_radius, float bottomleft_radius, float bottomright_radius);
+    RectUi(float width, float height, float bd_, SDL_Color *bg_, SDL_Color *fg_);
+    RectUi(float width, float height, float bd_, SDL_Color *bg_, SDL_Color *fg_, float radius_);
+    RectUi(float width, float height, float bd_, SDL_Color *bg_, SDL_Color *fg_, float topleft_radius_, float topright_radius_, float bottomleft_radius_, float bottomright_radius_);
 
     virtual void render(float left, float top);    // 渲染函数
 };
 
+
+/**
+ * @brief 组件类
+ * @details 用于处理显示元素的事件
+ */
+class Widget
+{
+public:
+    Ui *ui;    // 显示元素指针
+
+    Widget(Ui *ui_);
+    Widget(Ui &ui_);
+    virtual ~Widget(void);
+
+    virtual void handle(SDL_Event &event) = 0;
+    virtual void activate(void);      // 激活组件
+    virtual void deactivate(void);    // 停用组件
+};
+
+/**
+ * @brief 鼠标组件基类
+ * @details 对鼠标事件进行了一定抽象与封装，使之更易于使用
+ */
+class MouseBaseWidget : public Widget
+{
+public:
+    MouseBaseWidget(Ui *ui_);
+    MouseBaseWidget(Ui &ui_);
+    virtual ~MouseBaseWidget(void);
+
+    Uint8 mousedown;    // 标记按中的鼠标键
+    int mouseon;      // 标记鼠标是否在组件上
+
+    virtual void handle(SDL_Event &event) override;
+
+    // 以下均为回调函数，在相关事件发生时被调用，不用关心如何判断事件是否发生
+    virtual void mousepress(float x, float y, Uint8 button);      // 鼠标按下
+    virtual void mouserelease(float x, float y, Uint8 button);    // 鼠标释放
+    virtual void mouseclick(void);                                // 有效单机
+    virtual void mouseout(void);                                  // 鼠标移出组件
+    virtual void mousein(void);                                   // 鼠标移入组件
+    virtual void mousemove(float x, float y);                     // 鼠标移动
+};
 
 #endif

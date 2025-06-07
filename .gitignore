@@ -2,3 +2,4 @@
 build/
 dist/
 SDL3/
+.DS_Store

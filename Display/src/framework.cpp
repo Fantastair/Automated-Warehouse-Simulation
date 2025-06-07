@@ -9,6 +9,8 @@
 SDL_Window *window = NULL;             // 窗口指针
 SDL_Renderer *renderer = NULL;         // 渲染器指针
 TTF_TextEngine *text_engine = NULL;    // 文本引擎指针
+bool scaled = false;                   // 是否缩放
+SDL_Rect window_rect;                  // 窗口矩形，用于获取显示器边界
 
 /**
  * @brief 初始化显示模块
@@ -18,8 +20,35 @@ void Display_Init(int w, int h, SDL_WindowFlags flags)
     SDL_Init(SDL_INIT_VIDEO);
     TTF_Init();
 
-    SDL_CreateWindowAndRenderer(PROGRAM_NAME, w, h, flags, &window, &renderer);
-    SDL_SetRenderLogicalPresentation(renderer, w, h, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+    SDL_GetDisplayBounds(1, &window_rect);    // 获取显示器边界
+    // std::cout << "Display bounds: " << window_rect.x << ", " << window_rect.y << ", " << window_rect.w << ", " << window_rect.h << std::endl;
+    int w_, h_;
+    if (w != 0 && h != 0)
+    {
+        w_ = w;
+        h_ = h;
+    }
+    else if (window_rect.w >= 1920 && window_rect.h >= 1080)
+    {
+        w_ = 1920;
+        h_ = 1080;
+    }
+    else
+    {
+        w_ = 1280;
+        h_ = 720;
+        scaled = true;
+    }
+    SDL_CreateWindowAndRenderer(PROGRAM_NAME, w_, h_, flags, &window, &renderer);
+    // std::cout << "Window created with size: " << w_ << "x" << h_ << std::endl;
+    if (w != 0 && h != 0)
+    {
+        SDL_SetRenderLogicalPresentation(renderer, w, h, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+    }
+    else
+    {
+        SDL_SetRenderLogicalPresentation(renderer, 1920, 1080, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+    }
     text_engine = TTF_CreateRendererTextEngine(renderer);
 
     SDL_SetWindowIcon(window, IMG_Load("res/icon.png"));
@@ -49,7 +78,7 @@ void Display_Mainloop(void)
     clock_lime_ = SDL_GetTicksNS();
     while (true)
     {
-        auto dt = fps_clock();    // 控制帧率
+        auto dt = fps_clock();
 
         SDL_Event event;
         while (SDL_PollEvent(&event))
@@ -58,7 +87,16 @@ void Display_Mainloop(void)
             {
                 case SDL_EVENT_QUIT:                 // 用户关闭窗口
                     goto end;
+                case SDL_EVENT_MOUSE_BUTTON_DOWN:
+                case SDL_EVENT_MOUSE_BUTTON_UP:
+                case SDL_EVENT_MOUSE_MOTION:
+                    if (scaled)
+                    {
+                        event.button.x *= 1.5;
+                        event.button.y *= 1.5;
+                    }
                 default:
+                    root->handle(event);    
                     break;
             }
         }
@@ -127,9 +165,6 @@ Ui::Ui(void)
     this->father = nullptr;
     this->kidgroup.clear();
     this->rect = {0, 0, 0, 0};
-    this->handle_mbd_callback = nullptr;
-    this->handle_mbu_callback = nullptr;
-    this->handle_mmv_callback = nullptr;
 }
 
 /**
@@ -141,9 +176,6 @@ Ui::Ui(const SDL_FRect &rect_)
     this->father = nullptr;
     this->kidgroup.clear();
     this->rect = rect_;
-    this->handle_mbd_callback = nullptr;
-    this->handle_mbu_callback = nullptr;
-    this->handle_mmv_callback = nullptr;
 }
 
 /**
@@ -158,9 +190,6 @@ Ui::Ui(float left, float top, float width, float height)
     this->father = nullptr;
     this->kidgroup.clear();
     this->rect = {left, top, width, height};
-    this->handle_mbd_callback = nullptr;
-    this->handle_mbu_callback = nullptr;
-    this->handle_mmv_callback = nullptr;
 }
 
 /**
@@ -238,6 +267,42 @@ void Ui::leave(void)
 }
 
 /**
+ * @brief 事件处理函数
+ * @param event 事件
+ */
+void Ui::handle(SDL_Event &event)
+{
+    if (!kidgroup.empty())
+    {
+        if (father != nullptr && (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN || event.type == SDL_EVENT_MOUSE_BUTTON_UP || event.type == SDL_EVENT_MOUSE_MOTION))
+        {
+            event.button.x += rect.x;    // 调整事件坐标
+            event.button.y += rect.y;    // 调整事件坐标
+            for (auto &ui : kidgroup)
+            {
+                ui->handle(event);    // 处理事件
+            }
+            event.button.x -= rect.x;    // 恢复事件坐标
+            event.button.y -= rect.y;    // 恢复事件坐标
+        }
+        else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN || event.type == SDL_EVENT_MOUSE_BUTTON_UP || event.type == SDL_EVENT_MOUSE_MOTION)
+        {
+            for (auto &ui : kidgroup)
+            {
+                ui->handle(event);    // 处理事件
+            }
+        }
+    }
+    if (!widgetgroup.empty())
+    {
+        for (auto &widget : widgetgroup)
+        {
+            widget->handle(event);    // 处理组件事件
+        }
+    }
+}
+
+/**
  * @brief 渲染函数
  * @param left 左边距
  * @param top 上边距
@@ -252,45 +317,6 @@ void Ui::render(float left, float top)
     }
 }
 
-/**
- * @brief 事件处理函数
- * @param event 事件
- */
-void Ui::HandleEvent(SDL_Event &event)
-{
-    // 调用事件处理回调函数
-    switch (event.type)
-    {
-    case SDL_EVENT_MOUSE_BUTTON_DOWN:
-        if (handle_mbd_callback != nullptr) handle_mbd_callback(event.button);
-        event.button.x += rect.x;
-        event.button.y += rect.y;
-        break;
-    case SDL_EVENT_MOUSE_BUTTON_UP:
-        if (handle_mbu_callback != nullptr) handle_mbu_callback(event.button);
-        event.button.x += rect.x;
-        event.button.y += rect.y;
-        break;
-    case SDL_EVENT_MOUSE_MOTION:
-        if (handle_mmv_callback != nullptr) handle_mmv_callback(event.motion);
-        event.motion.x += rect.x;
-        event.motion.y += rect.y;
-        break;
-    default:
-        break;
-    }
-    // 将事件传递给子元素处理
-    for (auto &ui : kidgroup)
-    {
-        ui->HandleEvent(event);
-    }
-    // 还原事件坐标
-    if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN || event.type == SDL_EVENT_MOUSE_BUTTON_UP || event.type == SDL_EVENT_MOUSE_MOTION)
-    {
-        event.button.x -= rect.x;
-        event.button.y -= rect.y;
-    }
-}
 
 void Ui::set_rect_left(float left)                   { this->rect.x = left; }
 void Ui::set_rect_right(float right)                 { this->rect.x = right - this->rect.w; }
@@ -315,10 +341,7 @@ void Ui::set_rect_midbottom(float x, float y)        { this->rect.x = x - this->
 /**
  * @brief 初始化背景元素
  */
-BgUi::BgUi(void) : Ui(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
-{
-    Ui({0, 0, WINDOW_WIDTH, WINDOW_HEIGHT});
-}
+BgUi::BgUi(void) : Ui(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT) {}
 
 /**
  * @brief 初始化背景元素
@@ -483,6 +506,22 @@ void TextUi::render(float left, float top)
     Ui::render(left, top);
 }
 
+/**
+ * @brief 设置文本内容
+ * @param text_ 文本内容
+ * @param font_ 字体
+ * @param color 文本颜色
+ */
+void TextUi::set_text(const std::string &text_, TTF_Font *font_, SDL_Color &color)
+{
+    TTF_DestroyText(text);
+    text = TTF_CreateText(text_engine, font_, text_.c_str(), 0);
+    TTF_SetTextColor(text, color.r, color.g, color.b, color.a);
+    int w, h;
+    TTF_GetTextSize(text, &w, &h);
+    set_rect_size((float)w, (float)h);
+}
+
 
 /**
  * @brief 初始化矩形元素
@@ -492,7 +531,7 @@ void TextUi::render(float left, float top)
  * @param bg 背景颜色
  * @param fg 边框颜色
  */
-RectUi::RectUi(float width, float height, float bd, SDL_Color *bg, SDL_Color *fg) : Ui(0, 0, width, height), bd(bd), bg(bg), fg(fg), radius(0), top_left_radius(0), top_right_radius(0), bottom_left_radius(0), bottom_right_radius(0) {}
+RectUi::RectUi(float width, float height, float bd_, SDL_Color *bg_, SDL_Color *fg_) : Ui(0, 0, width, height), bg(bg_), fg(fg_), bd(bd_), radius(0), top_left_radius(0), top_right_radius(0), bottom_left_radius(0), bottom_right_radius(0) {}
 
 /**
  * @brief 初始化矩形元素
@@ -503,7 +542,7 @@ RectUi::RectUi(float width, float height, float bd, SDL_Color *bg, SDL_Color *fg
  * @param fg 边框颜色
  * @param radius 圆角半径
  */
-RectUi::RectUi(float width, float height, float bd, SDL_Color *bg, SDL_Color *fg, float radius) : Ui(0, 0, width, height), bd(bd), bg(bg), fg(fg), radius(radius), top_left_radius(0), top_right_radius(0), bottom_left_radius(0), bottom_right_radius(0) {}
+RectUi::RectUi(float width, float height, float bd_, SDL_Color *bg_, SDL_Color *fg_, float radius_) : Ui(0, 0, width, height), bg(bg_), fg(fg_), bd(bd_), radius(radius_), top_left_radius(0), top_right_radius(0), bottom_left_radius(0), bottom_right_radius(0) {}
 
 /**
  * @brief 初始化矩形元素
@@ -517,7 +556,7 @@ RectUi::RectUi(float width, float height, float bd, SDL_Color *bg, SDL_Color *fg
  * @param bottomleft_radius 左下角圆角半径
  * @param bottomright_radius 右下角圆角半径
  */
-RectUi::RectUi(float width, float height, float bd, SDL_Color *bg, SDL_Color *fg, float topleft_radius, float topright_radius, float bottomleft_radius, float bottomright_radius) : Ui(0, 0, width, height), bd(bd), bg(bg), fg(fg), radius(0), top_left_radius(topleft_radius), top_right_radius(topright_radius), bottom_left_radius(bottomleft_radius), bottom_right_radius(bottomright_radius) {}
+RectUi::RectUi(float width, float height, float bd_, SDL_Color *bg_, SDL_Color *fg_, float topleft_radius_, float topright_radius_, float bottomleft_radius_, float bottomright_radius_) : Ui(0, 0, width, height), bg(bg_), fg(fg_), bd(bd_), radius(0), top_left_radius(topleft_radius_), top_right_radius(topright_radius_), bottom_left_radius(bottomleft_radius_), bottom_right_radius(bottomright_radius_) {}
 
 /**
  * @brief 渲染矩形元素
@@ -547,3 +586,132 @@ void RectUi::render(float left, float top)
     rect.y -= top;
     Ui::render(left, top);
 }
+
+
+/**
+ * @brief 组件基类构造函数
+ */
+Widget::Widget(Ui *ui_) : ui(ui_) {}
+
+/**
+ * @brief 组件基类构造函数
+ * @param ui_ 显示元素引用
+ */
+Widget::Widget(Ui &ui_) : ui(&ui_) {}
+
+/**
+ * @brief 组件基类析构函数
+ */
+Widget::~Widget(void) {}
+
+/**
+ * @brief 组件激活函数
+ * @note 组件必须激活才能接收到事件
+ */
+void Widget::activate(void)
+{
+    ui->widgetgroup.push_back(this) ;
+}
+
+/**
+ * @brief 组件停用函数
+ * @note 组件停用后将不再接收到事件
+ */
+void Widget::deactivate(void)
+{
+    ui->widgetgroup.remove(this);
+}
+
+
+/**
+ * @brief 鼠标组件基类构造函数
+ * @param ui_ 显示元素指针
+ */
+MouseBaseWidget::MouseBaseWidget(Ui *ui_) : Widget(ui_), mousedown(0), mouseon(false) {}
+
+/**
+ * @brief 鼠标组件基类构造函数
+ * @param ui_ 显示元素引用
+ */
+MouseBaseWidget::MouseBaseWidget(Ui &ui_) : Widget(ui_), mousedown(0), mouseon(false) {}
+
+/**
+ * @brief 鼠标组件基类析构函数
+ */
+MouseBaseWidget::~MouseBaseWidget(void) {}
+
+/**
+ * @brief 鼠标事件处理函数
+ * @param event 事件
+ */
+void MouseBaseWidget::handle(SDL_Event &event)
+{
+    switch (event.type)
+    {
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        if (collide_point(ui->rect, event.button.x, event.button.y) && mousedown == 0) { mousedown = event.button.button; }
+        this->mousepress(event.button.x, event.button.y, event.button.button);
+        break;
+    case SDL_EVENT_MOUSE_BUTTON_UP:
+        this->mouserelease(event.button.x, event.button.y, event.button.button);
+        if (collide_point(ui->rect, event.button.x, event.button.y) && mousedown != 0) { this->mouseclick(); }
+        mousedown = 0;
+        break;
+    case SDL_EVENT_MOUSE_MOTION:
+        if (mouseon)
+        {
+            if (!collide_point(ui->rect, event.motion.x, event.motion.y))
+            {
+                mouseon = false;
+                this->mouseout();
+            }
+        }
+        else if (collide_point(ui->rect, event.motion.x, event.motion.y))
+        {
+            mouseon = true;
+            this->mousein();
+        }
+        this->mousemove(event.motion.x, event.motion.y);
+        break;
+    default:
+        break;
+    }
+}
+
+/**
+ * @brief 鼠标按下事件处理函数
+ * @param x X坐标
+ * @param y Y坐标
+ * @param button 鼠标按钮
+ */
+void MouseBaseWidget::mousepress([[maybe_unused]] float x, [[maybe_unused]] float y, [[maybe_unused]] Uint8 button) {}
+
+/**
+ * @brief 鼠标释放事件处理函数
+ * @param x X坐标
+ * @param y Y坐标
+ * @param button 鼠标按钮
+ */
+void MouseBaseWidget::mouserelease([[maybe_unused]] float x, [[maybe_unused]] float y, [[maybe_unused]] Uint8 button) {}
+
+/**
+ * @brief 鼠标单击事件处理函数
+ */
+void MouseBaseWidget::mouseclick(void) {}
+
+/**
+ * @brief 鼠标移出组件事件处理函数
+ */
+void MouseBaseWidget::mouseout(void) {}
+
+/**
+ * @brief 鼠标移入组件事件处理函数
+ */
+void MouseBaseWidget::mousein(void) {}
+
+/**
+ * @brief 鼠标移动事件处理函数
+ * @param x X坐标
+ * @param y Y坐标
+ */
+void MouseBaseWidget::mousemove([[maybe_unused]] float x, [[maybe_unused]] float y) {}

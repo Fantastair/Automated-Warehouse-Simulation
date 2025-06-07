@@ -8,7 +8,7 @@
  */
 void Launch_Init(void)
 {
-    Display_Init(728, 500, SDL_WINDOW_BORDERLESS);
+    Display_Init(728, 500, SDL_WINDOW_BORDERLESS | SDL_WINDOW_HIGH_PIXEL_DENSITY);
     pre_load(rm);
 
     root = new BgUi(rm.getColor(FAKEWHITE));
@@ -34,7 +34,7 @@ void Launch_Init(void)
     root->render(0, 0);
     SDL_RenderPresent(renderer);
 
-    SDL_Delay(2500);
+    SDL_Delay(2000);
     delete root;
     root = nullptr;
     rm.Clean();

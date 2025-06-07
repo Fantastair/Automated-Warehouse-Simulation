@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.10.0)
-project(AMS VERSION 0.3.0 LANGUAGES C CXX)
+project(AMS VERSION 0.8.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 if (MSVC)
-    add_compile_options(/W4)
+    add_compile_options(/W4 /permissive-)
     add_compile_options(/utf-8)
-    add_definitions(MSVC_BUILD)
+    add_compile_definitions(MSVC_BUILD)
 else()
     add_compile_options(-Wall -Wextra -Wpedantic)
     add_compile_definitions(UNIX_BUILD)
@@ -63,8 +63,6 @@ else()
     ${DISPLAY_SOURCES}
     ${Core_SOURCES}
     )
-    # configure_file(Info.plist Info.plist)
-    # set_target_properties(${TARGET} PROPERTIES MACOSX_BUNDLE_INFO_PLIST ßinfo.plist)
 endif()
 
 # target_link_options(

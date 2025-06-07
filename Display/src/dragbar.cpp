@@ -34,7 +34,7 @@ void DragBar::set_process(float p)
 {
     left_fill_bar->set_rect_width((rect.w - bd) * p);
     left_fill_bar->set_rect_left(bd / 2);
-    rigth_fill_bar->set_rect_width((rect.w - bd) * (1.0 - p));
+    rigth_fill_bar->set_rect_width((rect.w - bd) * (1 - p));
     rigth_fill_bar->set_rect_right(rect.w - bd / 2);
     process = p;
     Drager->set_rect_centerx(bd / 2 + (rect.w - bd) * p);
@@ -88,7 +88,7 @@ void DragBarMouseWidget::mousemove(float x, [[maybe_unused]] float y)
         {
             x = ui->rect.x + ui->rect.w - ((DragBar *)ui)->bd / 2;
         }
-        double p = (x - ui->rect.x - ((DragBar *)ui)->bd / 2) / (ui->rect.w - ((DragBar *)ui)->bd);
+        float p = (x - ui->rect.x - ((DragBar *)ui)->bd / 2) / (ui->rect.w - ((DragBar *)ui)->bd);
         if (p != ((DragBar *)ui)->process)
         {
             ((DragBar *)ui)->set_process(p);

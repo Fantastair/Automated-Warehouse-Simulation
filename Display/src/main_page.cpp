@@ -14,111 +14,116 @@ ButtonStyle NORMAL_BUTTON_STYLE;
 RectUi *inner_track;
 RectUi *outer_track;
 
-class ConnectorUi : public RectUi
+ConnectorUi::ConnectorUi(int i) : RectUi(WIDTH, HEIGHT, 4, nullptr, rm.getColor_(DARKBLUE), 8), index(i)
 {
-public:
-    int index;              // 接口索引
-    static float WIDTH;     // 接口宽度
-    static float HEIGHT;    // 接口高度
-    RectUi *fill_rect;      // 填充矩形，用于显示接口状态
-
-    ConnectorUi(int i) : RectUi(WIDTH, HEIGHT, 4, nullptr, rm.getColor_(DARKBLUE), 8), index(i)
+    fill_rect = new RectUi(WIDTH - 4, 0, 0, nullptr, nullptr, radius - bd / 2);
+    fill_rect->join(this);
+    if ((i < 12 && i % 2 == 0) || i >= 15)
     {
-        fill_rect = new RectUi(WIDTH - 4, 0, 0, nullptr, nullptr, radius - bd / 2);
-        fill_rect->join(this);
-        if ((i < 12 && i % 2 == 0) || i >= 15)
+        fill_rect->bg = rm.getColor_(INCOLOR);
+    }
+    else
+    {
+        fill_rect->bg = rm.getColor_(OUTCOLOR);
+    }
+    TextUi *arrow = nullptr;
+    TextUi *index_text = new TextUi(std::to_string(i + 1), rm.getFont("deyi.ttf", 24), rm.getColor(DARKBLUE));
+    if (i < 12)
+    {
+        index_text->set_rect_center(WIDTH / 2, HEIGHT / 4);
+        if (i % 2 == 0)
         {
-            fill_rect->bg = rm.getColor_(INCOLOR);
-        }
-        else
-        {
-            fill_rect->bg = rm.getColor_(OUTCOLOR);
-        }
-        TextUi *arrow = nullptr;
-        TextUi *index_text = new TextUi(std::to_string(i + 1), rm.getFont("deyi.ttf", 24), rm.getColor(DARKBLUE));
-        if (i < 12)
-        {
-            index_text->set_rect_center(WIDTH / 2, HEIGHT / 4);
-            if (i % 2 == 0)
-            {
-                set_rect_bottomleft(inner_track->rect.x + (CURVE_TRACKRADIUS + CS_1_LEFTPAD + (CONNECTOR_WIDTH * 2 + CS2SC_DISTANCE + SC2CS_DISTANCE) * (i/2)) * ZOOM_FACTOR, outer_track->rect.y - 6);
-                arrow = new TextUi(ICON_UP_ARROW, rm.getFont("iconfont.ttf", 32), rm.getColor(DARKBLUE));
-            }
-            else
-            {
-                set_rect_bottomleft(inner_track->rect.x + (CURVE_TRACKRADIUS + CS_1_LEFTPAD + (CONNECTOR_WIDTH * 2 + CS2SC_DISTANCE + SC2CS_DISTANCE) * (i/2) + CONNECTOR_WIDTH + CS2SC_DISTANCE) * ZOOM_FACTOR, outer_track->rect.y - 6);
-                arrow = new TextUi(ICON_DOWN_ARROW, rm.getFont("iconfont.ttf", 32), rm.getColor(DARKBLUE));
-            }
-        }
-        else if (i < 15)
-        {
-            index_text->set_rect_center(WIDTH / 2, HEIGHT * 3 / 4); 
-            set_rect_topleft(inner_track->rect.x + (CURVE_TRACKRADIUS + PC_18_LEFTPAD + (CONNECTOR_WIDTH + PC2PC_DISTANCE) * (14-i) + CONNECTOR_WIDTH * 3 + PC2PC_DISTANCE * 2 + PC2CP_DISTANCE) * ZOOM_FACTOR, outer_track->rect.y + outer_track->rect.h + 6);
-            arrow = new TextUi(ICON_DOWN_ARROW, rm.getFont("iconfont.ttf", 32), rm.getColor(DARKBLUE));
-        }
-        else
-        {
-            index_text->set_rect_center(WIDTH / 2, HEIGHT * 3 / 4); 
-            set_rect_topleft(inner_track->rect.x + (CURVE_TRACKRADIUS + PC_18_LEFTPAD + (CONNECTOR_WIDTH + PC2PC_DISTANCE) * (17-i)) * ZOOM_FACTOR, outer_track->rect.y + outer_track->rect.h + 6);
+            set_rect_bottomleft(inner_track->rect.x + (CURVE_TRACKRADIUS + CS_1_LEFTPAD + (CONNECTOR_WIDTH * 2 + CS2SC_DISTANCE + SC2CS_DISTANCE) * (i/2)) * ZOOM_FACTOR, outer_track->rect.y - 6);
             arrow = new TextUi(ICON_UP_ARROW, rm.getFont("iconfont.ttf", 32), rm.getColor(DARKBLUE));
         }
-        arrow->set_rect_center(rect.w / 2, rect.h / 2);
-        arrow->join(this);
-        index_text->join(this);
-    }
-
-    virtual void render(float left, float top)
-    {
-        switch (ConnectorList[index].state)
+        else
         {
-        case ConnectorState::ConnectorIdle:
-            break;
-        case ConnectorState::WaitForCar:
-            break;
-        case ConnectorState::WorkWithCar:
-            if (ConnectorList[index].type == ConnectorType::CarToStoration || ConnectorList[index].type == ConnectorType::CarToPerson)
-            {
-                fill_rect->set_rect_height((HEIGHT - bd) * ConnectorList[index].time_temp / LOADTIME);
-            }
-            else
-            {
-                fill_rect->set_rect_height((HEIGHT - bd) * (LOADTIME - ConnectorList[index].time_temp) / LOADTIME);
-            }
-            if (index < 12)
-            {
-                fill_rect->set_rect_bottomleft(bd / 2, HEIGHT - bd / 2);
-            }
-            else
-            {
-                fill_rect->set_rect_topleft(bd / 2, bd / 2);
-            }
-            break;
-        case ConnectorState::WorkWithOther:
-            if (ConnectorList[index].type == ConnectorType::CarToStoration || ConnectorList[index].type == ConnectorType::CarToPerson)
-            {
-                fill_rect->set_rect_height((HEIGHT - bd) * (ConnectorList[index].get_load_time() - ConnectorList[index].time_temp) / ConnectorList[index].get_load_time());
-            }
-            else
-            {
-                fill_rect->set_rect_height((HEIGHT - bd) * ConnectorList[index].time_temp / ConnectorList[index].get_load_time());
-            }
-            if (index < 12)
-            {
-                fill_rect->set_rect_topleft(bd / 2, bd / 2);
-            }
-            else
-            {
-                fill_rect->set_rect_bottomleft(bd / 2, HEIGHT - bd / 2);
-            }
-            break;
-        case ConnectorState::CallingCar:
-            break;
-        default:
-            break;
+            set_rect_bottomleft(inner_track->rect.x + (CURVE_TRACKRADIUS + CS_1_LEFTPAD + (CONNECTOR_WIDTH * 2 + CS2SC_DISTANCE + SC2CS_DISTANCE) * (i/2) + CONNECTOR_WIDTH + CS2SC_DISTANCE) * ZOOM_FACTOR, outer_track->rect.y - 6);
+            arrow = new TextUi(ICON_DOWN_ARROW, rm.getFont("iconfont.ttf", 32), rm.getColor(DARKBLUE));
         }
-        RectUi::render(left, top);
     }
-};
+    else if (i < 15)
+    {
+        index_text->set_rect_center(WIDTH / 2, HEIGHT * 3 / 4); 
+        set_rect_topleft(inner_track->rect.x + (CURVE_TRACKRADIUS + PC_18_LEFTPAD + (CONNECTOR_WIDTH + PC2PC_DISTANCE) * (14-i) + CONNECTOR_WIDTH * 3 + PC2PC_DISTANCE * 2 + PC2CP_DISTANCE) * ZOOM_FACTOR, outer_track->rect.y + outer_track->rect.h + 6);
+        arrow = new TextUi(ICON_DOWN_ARROW, rm.getFont("iconfont.ttf", 32), rm.getColor(DARKBLUE));
+    }
+    else
+    {
+        index_text->set_rect_center(WIDTH / 2, HEIGHT * 3 / 4); 
+        set_rect_topleft(inner_track->rect.x + (CURVE_TRACKRADIUS + PC_18_LEFTPAD + (CONNECTOR_WIDTH + PC2PC_DISTANCE) * (17-i)) * ZOOM_FACTOR, outer_track->rect.y + outer_track->rect.h + 6);
+        arrow = new TextUi(ICON_UP_ARROW, rm.getFont("iconfont.ttf", 32), rm.getColor(DARKBLUE));
+    }
+    arrow->set_rect_center(rect.w / 2, rect.h / 2);
+    arrow->join(this);
+    index_text->join(this);
+
+    card = new ConnectorInfoCard(i);
+    mousewidget = new ConnectorUiMouseWidget(this);
+    mousewidget->activate();
+}
+
+ConnectorUi::~ConnectorUi(void)
+{
+    delete mousewidget;
+}
+
+void ConnectorUi::render(float left, float top)
+{
+    switch (ConnectorList[index].state)
+    {
+    case ConnectorState::ConnectorIdle:
+        if (fill_rect->rect.h != 0)
+        {
+            fill_rect->set_rect_height(0);
+        }
+        break;
+    case ConnectorState::WaitForCar:
+        break;
+    case ConnectorState::WorkWithCar:
+        if (ConnectorList[index].type == ConnectorType::CarToStoration || ConnectorList[index].type == ConnectorType::CarToPerson)
+        {
+            fill_rect->set_rect_height((HEIGHT - bd) * ConnectorList[index].time_temp / LOADTIME);
+        }
+        else
+        {
+            fill_rect->set_rect_height((HEIGHT - bd) * (LOADTIME - ConnectorList[index].time_temp) / LOADTIME);
+        }
+        if (index < 12)
+        {
+            fill_rect->set_rect_bottomleft(bd / 2, HEIGHT - bd / 2);
+        }
+        else
+        {
+            fill_rect->set_rect_topleft(bd / 2, bd / 2);
+        }
+        break;
+    case ConnectorState::WorkWithOther:
+        if (ConnectorList[index].type == ConnectorType::CarToStoration || ConnectorList[index].type == ConnectorType::CarToPerson)
+        {
+            fill_rect->set_rect_height((HEIGHT - bd) * (ConnectorList[index].get_load_time() - ConnectorList[index].time_temp) / ConnectorList[index].get_load_time());
+        }
+        else
+        {
+            fill_rect->set_rect_height((HEIGHT - bd) * ConnectorList[index].time_temp / ConnectorList[index].get_load_time());
+        }
+        if (index < 12)
+        {
+            fill_rect->set_rect_topleft(bd / 2, bd / 2);
+        }
+        else
+        {
+            fill_rect->set_rect_bottomleft(bd / 2, HEIGHT - bd / 2);
+        }
+        break;
+    case ConnectorState::CallingCar:
+        break;
+    default:
+        break;
+    }
+    RectUi::render(left, top);
+}
+
 float ConnectorUi::WIDTH = CONNECTOR_WIDTH * ZOOM_FACTOR;
 float ConnectorUi::HEIGHT = (CONNECTOR_WIDTH * 2) * ZOOM_FACTOR;
 ConnectorUi *connectorui_list[18];
@@ -135,6 +140,10 @@ Button *switch_simulation_button = nullptr;         // 开始/暂停仿真按钮
 Button *reset_simulation_button = nullptr;          // 重置仿真按钮
 Button *random_task_button = nullptr;               // 随机执行任务按钮
 Button *file_task_button = nullptr;                 // 从文件导入任务按钮
+Button *car_num_button = nullptr;                   // 设置穿梭车数量按钮
+TextUi *car_num_button_text = nullptr;                     // 穿梭车数量文本
+
+CarInfoBar *CIC_List[7];
 
 /**
  * @brief 初始化主页面
@@ -168,7 +177,13 @@ void main_page_Init(void)
     split_line->set_rect_top(600 - 4);
     split_line->join(root);
     TextUi *text = new TextUi("控制面板", rm.getFont("shuhei.ttf", 32), rm.getColor(FAKEWHITE));
-    text->set_rect_center(split_line->rect.w / 2, split_line->rect.h / 2);
+    text->set_rect_center(280, split_line->rect.h / 2);
+    text->join(split_line);
+    text = new TextUi("车辆列表", rm.getFont("shuhei.ttf", 32), rm.getColor(FAKEWHITE));
+    text->set_rect_center(930, split_line->rect.h / 2);
+    text->join(split_line);
+    text = new TextUi("详细信息", rm.getFont("shuhei.ttf", 32), rm.getColor(FAKEWHITE));
+    text->set_rect_center(1610, split_line->rect.h / 2);
     text->join(split_line);
     RectUi *border = new RectUi(WINDOW_WIDTH - 8, WINDOW_HEIGHT - 8, 8, nullptr, rm.getColor_(DARKBLUE));
     border->set_rect_topleft(4, 4);
@@ -234,24 +249,6 @@ void main_page_Init(void)
         CarList[i].init();
     }
 
-    for (int i = 0; i < 108; i++)
-    {
-        CarTask task;
-        GenerateRandomTask(task);
-        ConnectorList[task.start_connector].task_list.push_back(task);
-    }
-    for (int i = 0; i < 18; i++)
-    {
-        if (!ConnectorList[i].task_list.empty())
-        {
-            ConnectorList[i].state = ConnectorState::WorkWithOther;
-            ConnectorList[i].time_temp = ConnectorList[i].get_load_time();
-        }
-    }
-    // ConnectorList[15].task_list.push_back({ 15, 0, 0 });
-    // ConnectorList[16].task_list.push_back({ 16, 10, 0 });
-    // ConnectorList[17].task_list.push_back({ 17, 6, 0 });
-
     update_car_pos();
     update_func_list.push_back(update_car_pos_func);
 
@@ -260,9 +257,9 @@ void main_page_Init(void)
     simulation_time_tip_text = new TextUi("仿真时间：", rm.getFont("deyi.ttf", 48), rm.getColor(DARKBLUE));
     simulation_time_tip_text->set_rect_midright(system_runtime_tip_text->rect.x + system_runtime_tip_text->rect.w, system_runtime_tip_text->rect.y + system_runtime_tip_text->rect.h + 48);
     simulation_time_tip_text->join(root);
-    system_runtime_text = new TextUi("00:00:00.00", rm.getFont("deyi.ttf", 48), rm.getColor(DARKBLUE), system_runtime_tip_text->rect.x + system_runtime_tip_text->rect.w + 8, system_runtime_tip_text->rect.y + system_runtime_tip_text->rect.h / 2);
+    system_runtime_text = new TextUi("00:00:00.0", rm.getFont("deyi.ttf", 48), rm.getColor(DARKBLUE), system_runtime_tip_text->rect.x + system_runtime_tip_text->rect.w + 8, system_runtime_tip_text->rect.y + system_runtime_tip_text->rect.h / 2);
     system_runtime_text->join(root);
-    simulation_time_text = new TextUi("00:00:00.00", rm.getFont("deyi.ttf", 48), rm.getColor(DARKBLUE), simulation_time_tip_text->rect.x + simulation_time_tip_text->rect.w + 8, simulation_time_tip_text->rect.y + simulation_time_tip_text->rect.h / 2);
+    simulation_time_text = new TextUi("00:00:00.0", rm.getFont("deyi.ttf", 48), rm.getColor(DARKBLUE), simulation_time_tip_text->rect.x + simulation_time_tip_text->rect.w + 8, simulation_time_tip_text->rect.y + simulation_time_tip_text->rect.h / 2);
     simulation_time_text->join(root);
 
     update_func_list.push_back(update_time_func);
@@ -273,19 +270,21 @@ void main_page_Init(void)
     simulation_speed_text = new TextUi(std::to_string(simulation_speed) + "x", rm.getFont("deyi.ttf", 48), rm.getColor(DARKBLUE), simulation_speed_tip_text->rect.x + simulation_speed_tip_text->rect.w + 8, simulation_speed_tip_text->rect.y + simulation_speed_tip_text->rect.h / 2);
     simulation_speed_text->join(root);
 
-    update_func_list.push_back(update_speed_func);
-
     DragBarStyle speed_dragbar_style = { rm.getColor_(THEMEBLUE), rm.getColor_(DEEPWHITE), rm.getColor_(DARKBLUE) };
     RectUi *drager = new RectUi(48, 48, 4, rm.getColor_(FAKEWHITE), rm.getColor_(DARKBLUE), 16);
+    RectUi *drager_dot = new RectUi(24, 24, 0, rm.getColor_(THEMEBLUE), nullptr, 8);
+    drager_dot->set_rect_center(drager->rect.w / 2, drager->rect.h / 2);
+    drager_dot->join(drager);
+    
     speed_dragbar = new SpeedDragBar(480, 20, 4, speed_dragbar_style, (Ui *)drager);
     speed_dragbar->set_rect_center(280, 894);
-    speed_dragbar->set_process((simulation_speed - 0.5) / (32 - 0.5)); // 设置初始进度
+    speed_dragbar->set_process((simulation_speed - 0.5f) / (32 - 0.5f)); // 设置初始进度
 
     AnyButtonMouseWidget *fast_set_speed_button = nullptr;
     RectUi *scale_line = nullptr;
 
     TextUi *fast_set_speed_text_1x = new TextUi("1x", rm.getFont("deyi.ttf", 24), rm.getColor(DARKBLUE));
-    fast_set_speed_text_1x->set_rect_center(speed_dragbar->rect.x + speed_dragbar->bd / 2 + (speed_dragbar->rect.w - speed_dragbar->bd) * (1.0 - 0.5) / (32 - 0.5), speed_dragbar->rect.y + speed_dragbar->rect.h + 32);
+    fast_set_speed_text_1x->set_rect_center(speed_dragbar->rect.x + speed_dragbar->bd / 2 + (speed_dragbar->rect.w - speed_dragbar->bd) * (1 - 0.5f) / (32 - 0.5f), speed_dragbar->rect.y + speed_dragbar->rect.h + 32);
     fast_set_speed_text_1x->join(root);
     scale_line = new RectUi(2, 16, 0, rm.getColor_(DARKBLUE), nullptr);
     scale_line->set_rect_midtop(fast_set_speed_text_1x->rect.x + fast_set_speed_text_1x->rect.w / 2, speed_dragbar->rect.y + speed_dragbar->rect.h);
@@ -295,7 +294,7 @@ void main_page_Init(void)
     fast_set_speed_button->activate();
 
     TextUi *fast_set_speed_text_4x = new TextUi("4x", rm.getFont("deyi.ttf", 24), rm.getColor(DARKBLUE));
-    fast_set_speed_text_4x->set_rect_center(speed_dragbar->rect.x + speed_dragbar->bd / 2 + (speed_dragbar->rect.w - speed_dragbar->bd) * (4.0 - 0.5) / (32 - 0.5), speed_dragbar->rect.y + speed_dragbar->rect.h + 32);
+    fast_set_speed_text_4x->set_rect_center(speed_dragbar->rect.x + speed_dragbar->bd / 2 + (speed_dragbar->rect.w - speed_dragbar->bd) * (4 - 0.5f) / (32 - 0.5f), speed_dragbar->rect.y + speed_dragbar->rect.h + 32);
     fast_set_speed_text_4x->join(root);
     scale_line = new RectUi(2, 16, 0, rm.getColor_(DARKBLUE), nullptr);
     scale_line->set_rect_midtop(fast_set_speed_text_4x->rect.x + fast_set_speed_text_4x->rect.w / 2, speed_dragbar->rect.y + speed_dragbar->rect.h);
@@ -305,7 +304,7 @@ void main_page_Init(void)
     fast_set_speed_button->activate();
 
     TextUi *fast_set_speed_text_8x = new TextUi("8x", rm.getFont("deyi.ttf", 24), rm.getColor(DARKBLUE));
-    fast_set_speed_text_8x->set_rect_center(speed_dragbar->rect.x + speed_dragbar->bd / 2 + (speed_dragbar->rect.w - speed_dragbar->bd) * (8.0 - 0.5) / (32 - 0.5), speed_dragbar->rect.y + speed_dragbar->rect.h + 32);
+    fast_set_speed_text_8x->set_rect_center(speed_dragbar->rect.x + speed_dragbar->bd / 2 + (speed_dragbar->rect.w - speed_dragbar->bd) * (8 - 0.5f) / (32 - 0.5f), speed_dragbar->rect.y + speed_dragbar->rect.h + 32);
     fast_set_speed_text_8x->join(root);
     scale_line = new RectUi(2, 16, 0, rm.getColor_(DARKBLUE), nullptr);
     scale_line->set_rect_midtop(fast_set_speed_text_8x->rect.x + fast_set_speed_text_8x->rect.w / 2, speed_dragbar->rect.y + speed_dragbar->rect.h);
@@ -315,7 +314,7 @@ void main_page_Init(void)
     fast_set_speed_button->activate();
 
     TextUi *fast_set_speed_text_16x = new TextUi("16x", rm.getFont("deyi.ttf", 24), rm.getColor(DARKBLUE));
-    fast_set_speed_text_16x->set_rect_center(speed_dragbar->rect.x + speed_dragbar->bd / 2 + (speed_dragbar->rect.w - speed_dragbar->bd) * (16.0 - 0.5) / (32 - 0.5), speed_dragbar->rect.y + speed_dragbar->rect.h + 32);
+    fast_set_speed_text_16x->set_rect_center(speed_dragbar->rect.x + speed_dragbar->bd / 2 + (speed_dragbar->rect.w - speed_dragbar->bd) * (16 - 0.5f) / (32 - 0.5f), speed_dragbar->rect.y + speed_dragbar->rect.h + 32);
     fast_set_speed_text_16x->join(root);
     scale_line = new RectUi(2, 16, 0, rm.getColor_(DARKBLUE), nullptr);
     scale_line->set_rect_midtop(fast_set_speed_text_16x->rect.x + fast_set_speed_text_16x->rect.w / 2, speed_dragbar->rect.y + speed_dragbar->rect.h);
@@ -325,7 +324,7 @@ void main_page_Init(void)
     fast_set_speed_button->activate();
 
     TextUi *fast_set_speed_text_32x = new TextUi("32x", rm.getFont("deyi.ttf", 24), rm.getColor(DARKBLUE));
-    fast_set_speed_text_32x->set_rect_center(speed_dragbar->rect.x + speed_dragbar->bd / 2 + (speed_dragbar->rect.w - speed_dragbar->bd) * (32.0 - 0.5) / (32 - 0.5), speed_dragbar->rect.y + speed_dragbar->rect.h + 32);
+    fast_set_speed_text_32x->set_rect_center(speed_dragbar->rect.x + speed_dragbar->bd / 2 + (speed_dragbar->rect.w - speed_dragbar->bd) * (32 - 0.5f) / (32 - 0.5f), speed_dragbar->rect.y + speed_dragbar->rect.h + 32);
     fast_set_speed_text_32x->join(root);
     scale_line = new RectUi(2, 16, 0, rm.getColor_(DARKBLUE), nullptr);
     scale_line->set_rect_midtop(fast_set_speed_text_32x->rect.x + fast_set_speed_text_32x->rect.w / 2, speed_dragbar->rect.y + speed_dragbar->rect.h);
@@ -345,16 +344,15 @@ void main_page_Init(void)
     switch_simulation_button->bind(switch_simulation);
 
     reset_simulation_button = new Button(64, 64, NORMAL_BUTTON_STYLE);
-    reset_simulation_button->set_rect_center(switch_simulation_button->rect.x + switch_simulation_button->rect.w / 2 + 128, 1000);
+    reset_simulation_button->set_rect_center(switch_simulation_button->rect.x + switch_simulation_button->rect.w / 2 + 96, 1000);
     reset_simulation_button->join(root);
     RectUi *reset_simulation_button_text = new RectUi(32, 32, 0, rm.getColor_(DARKBLUE), nullptr, 8);
     reset_simulation_button_text->set_rect_center(reset_simulation_button->rect.w / 2, reset_simulation_button->rect.h / 2);
     reset_simulation_button_text->join(reset_simulation_button);
-    reset_simulation_button->disable();
     reset_simulation_button->bind(reset_simulation);
 
     random_task_button = new Button(64, 64, NORMAL_BUTTON_STYLE);
-    random_task_button->set_rect_center(reset_simulation_button->rect.x + reset_simulation_button->rect.w / 2 + 128, 1000);
+    random_task_button->set_rect_center(reset_simulation_button->rect.x + reset_simulation_button->rect.w / 2 + 96, 1000);
     random_task_button->join(root);
     TextUi *random_task_button_text = new TextUi(ICON_RANDOM, rm.getFont("iconfont.ttf", 32), rm.getColor(DARKBLUE));
     random_task_button_text->set_rect_center(random_task_button->rect.w / 2, random_task_button->rect.h / 2);
@@ -362,19 +360,41 @@ void main_page_Init(void)
     random_task_button->bind(random_task);
 
     file_task_button = new Button(64, 64, NORMAL_BUTTON_STYLE);
-    file_task_button->set_rect_center(random_task_button->rect.x + random_task_button->rect.w / 2 + 128, 1000);
+    file_task_button->set_rect_center(random_task_button->rect.x + random_task_button->rect.w / 2 + 96, 1000);
     file_task_button->join(root);
     TextUi *file_task_button_text = new TextUi(ICON_FILE, rm.getFont("iconfont.ttf", 32), rm.getColor(DARKBLUE));
     file_task_button_text->set_rect_center(file_task_button->rect.w / 2, file_task_button->rect.h / 2);
     file_task_button_text->join(file_task_button);
     file_task_button->bind(file_task);
 
+    car_num_button = new Button(64, 64, NORMAL_BUTTON_STYLE);
+    car_num_button->set_rect_center(file_task_button->rect.x + file_task_button->rect.w / 2 + 96, 1000);
+    car_num_button->join(root);
+    car_num_button_text = new TextUi("3", rm.getFont("shuhei.ttf", 32), rm.getColor(DARKBLUE));
+    car_num_button_text->set_rect_center(car_num_button->rect.w / 2, car_num_button->rect.h / 2);
+    car_num_button_text->join(car_num_button);
+    car_num_button->bind(switch_car_num);
+
     float t = split_line->rect.y + split_line->rect.h;
     split_line = new RectUi(8, WINDOW_HEIGHT - t - 8, 0, rm.getColor_(DARKBLUE), nullptr);
     split_line->set_rect_midtop(560, t);
     split_line->join(root);
-}
 
+    update_func_list.push_back(check_task_over_func);
+
+    for (int i = 0; i < 7; i++)
+    {
+        CIC_List[i] = new CarInfoBar(i);
+        CIC_List[i]->set_rect_midleft(split_line->rect.x + split_line->rect.w + 16, t - 24 + (i + 1) * 420 / 7);
+    }
+    CIC_List[0]->join(root);
+    CIC_List[1]->join(root);
+    CIC_List[2]->join(root);
+
+    split_line = new RectUi(8, WINDOW_HEIGHT - t - 8, 0, rm.getColor_(DARKBLUE), nullptr);
+    split_line->set_rect_midtop(1300, t);
+    split_line->join(root);
+}
 
 /**
  * @brief 车辆UI类构造函数
@@ -399,7 +419,7 @@ CarUi::~CarUi(void)
  */
 void CarUi::init_id_text(void)
 {
-    id_text = new TextUi(std::to_string(num + 1), rm.getFont("deyi.ttf", 24), rm.getColor(DARKBLUE));
+    id_text = new TextUi("C " + std::to_string(num + 1), rm.getFont("deyi.ttf", 24), rm.getColor(DARKBLUE));
     id_text->set_rect_center(WIDTH / 2, HEIGHT / 2);
     id_text->join(this);
 }
@@ -424,7 +444,7 @@ void CarUi::update_surface(void)
 
     // 绘制车辆
     Draw_Rect_Surface(surface, progress_bar->rect, 0, progress_bar->bg, nullptr);
-    Draw_Rect_Surface(surface, {0, 0, WIDTH, HEIGHT}, 8, nullptr, rm.getColor_((CarList[num].state != CarState::CarIdle) ? THEMEBLUE : GRAY), 8);
+    Draw_Rect_Surface(surface, {0, 0, WIDTH, HEIGHT}, 8, nullptr, rm.getColor_((CarList[num].state != CarState::CarIdle && CarList[num].state != CarState::CarInit) ? THEMEBLUE : GRAY), 8);
 
     SDL_LockSurface(surface);
 }
@@ -444,13 +464,17 @@ void CarUi::update_progress(void)
     }
     if (CarList[num].state == CarState::CarGetting)
     {
-        progress_bar->set_rect_height(static_cast<float>((HEIGHT - 14) * static_cast<double>(CarList[num].time_temp) / LOADTIME));
+        progress_bar->set_rect_height(static_cast<float>((HEIGHT - 12) * static_cast<float>(CarList[num].time_temp) / LOADTIME));
         progress_bar->set_rect_top(7);
     }
     else if (CarList[num].state == CarState::CarPutting)
     {
-        progress_bar->set_rect_height(static_cast<float>((HEIGHT - 14) * (1 - static_cast<double>(CarList[num].time_temp) / LOADTIME)));
+        progress_bar->set_rect_height(static_cast<float>((HEIGHT - 12) * (1 - static_cast<float>(CarList[num].time_temp) / LOADTIME)));
         progress_bar->set_rect_top(7);
+    }
+    else if (CarList[num].state == CarState::CarIdle && progress_bar->rect.h != 0)
+    {
+        progress_bar->set_rect_height(0);
     }
 }
 
@@ -490,7 +514,27 @@ SpeedDragBar::SpeedDragBar(float width, float height, float bd_, DragBarStyle &s
 void SpeedDragBar::set_process(float p)
 {
     DragBar::set_process(p);
-    set_simulation_speed(0.5 + (32 - 0.5) * p);
+    set_simulation_speed(0.5f + (32 - 0.5f) * p);
+    SDL_Color c = rm.getColor(DARKBLUE);
+    std::string speed_text = std::to_string(simulation_speed);
+    if (speed_text.find('.') == std::string::npos)
+    {
+        speed_text += ".00"; // 如果没有小数点，添加两位小数
+    }
+    else
+    {
+        size_t dot_pos = speed_text.find('.');
+        if (dot_pos + 3 == speed_text.size())
+        {
+            speed_text += "0"; // 如果小数点后只有一位，添加一位
+        }
+        else if (dot_pos + 4 < speed_text.size())
+        {
+            speed_text = speed_text.substr(0, dot_pos + 4); // 保留两位小数
+        }
+    }
+    simulation_speed_text->set_text(speed_text + "x", rm.getFont("deyi.ttf", 48), c);
+    simulation_speed_text->set_rect_midleft(simulation_speed_tip_text->rect.x + simulation_speed_tip_text->rect.w + 8, simulation_speed_tip_text->rect.y + simulation_speed_tip_text->rect.h / 2);
 }
 
 /**
@@ -585,34 +629,6 @@ void update_time_func(Uint64)
 }
 
 /**
- * @brief 更新仿真速度文本
- * @details 速度文本保留两位小数
- */
-void update_speed_func(Uint64)
-{
-    SDL_Color c = rm.getColor(DARKBLUE);
-    std::string speed_text = std::to_string(simulation_speed);
-    if (speed_text.find('.') == std::string::npos)
-    {
-        speed_text += ".00"; // 如果没有小数点，添加两位小数
-    }
-    else
-    {
-        size_t dot_pos = speed_text.find('.');
-        if (dot_pos + 3 == speed_text.size())
-        {
-            speed_text += "0"; // 如果小数点后只有一位，添加一位
-        }
-        else if (dot_pos + 4 < speed_text.size())
-        {
-            speed_text = speed_text.substr(0, dot_pos + 4); // 保留两位小数
-        }
-    }
-    simulation_speed_text->set_text(speed_text + "x", rm.getFont("deyi.ttf", 48), c);
-    simulation_speed_text->set_rect_midleft(simulation_speed_tip_text->rect.x + simulation_speed_tip_text->rect.w + 8, simulation_speed_tip_text->rect.y + simulation_speed_tip_text->rect.h / 2);
-}
-
-/**
  * @brief 开始/暂停仿真
  */
 void switch_simulation(void)
@@ -622,15 +638,17 @@ void switch_simulation(void)
     {
         Simulating = false;
         switch_simulation_button_text->set_text(ICON_PLAY, rm.getFont("iconfont.ttf", 32), c);
+        random_task_button->enable();
+        file_task_button->enable();
+        car_num_button->enable();
     }
     else
     {
         Simulating = true;
         switch_simulation_button_text->set_text(ICON_PAUSE, rm.getFont("iconfont.ttf", 32), c);
-        if (reset_simulation_button->state == BUTTON_STATE_DISABLE)
-        {
-            reset_simulation_button->enable();
-        }
+        random_task_button->disable();
+        file_task_button->disable();
+        car_num_button->disable();
     }
 }
 
@@ -639,7 +657,50 @@ void switch_simulation(void)
  */
 void reset_simulation(void)
 {
+    SDL_Color c = rm.getColor(DARKBLUE);
+    Simulating = false;
+    simulation_time = 0;
+    switch_simulation_button_text->set_text(ICON_PLAY, rm.getFont("iconfont.ttf", 32), c);
+    for (int i = 0; i < 7; i++)
+    {
+        CarList[i].state = CarState::CarIdle;
+        CarList[i].speed = 0;
+        CarList[i].position = CarList[i].initial_pos;
+        CarList[i].task = { -1, -1, -1, -1 };
+        CarList[i].time_temp = 0;
+        CarList[i].maxspeed_curve = MAXSPEED_CURVE;
+        CarList[i].maxspeed_stright = MAXSPEED_STRIGHT;
 
+        CarList[i].CarIdleTime = 0;
+        CarList[i].CarToGetTime = 0;
+        CarList[i].CarGettingTime = 0;
+        CarList[i].CarToPutTime = 0;
+        CarList[i].CarWaitToPutTime = 0;
+        CarList[i].CarPuttingTime = 0;
+        CarList[i].CarInitTime = 0;
+        CarList[i].CarWaitingTime = 0;
+        CarList[i].CarStopCount = 0;
+        CarList[i].run_state = CarRunState::CarUniform;
+        CarList[i].in_task_count = 0;
+        CarList[i].out_task_count = 0;
+    }
+    for (int i = 0; i < 18; i++)
+    {
+        ConnectorList[i].state = ConnectorState::ConnectorIdle;
+        ConnectorList[i].time_temp = 0;
+        ConnectorList[i].task_list.clear();
+
+        ConnectorList[i].ConnectorIdleTime = 0;
+        ConnectorList[i].ConnectorWaitForCarTime = 0;
+        ConnectorList[i].ConnectorWorkWithCarTime = 0;
+        ConnectorList[i].ConnectorWorkWithOtherTime = 0;
+        ConnectorList[i].ConnectorCallingCarTime = 0;
+    }
+    update_car_pos();
+    simulation_time_text->set_text(NS2String(simulation_time), rm.getFont("deyi.ttf", 48), c);
+    simulation_time_text->set_rect_midleft(simulation_time_tip_text->rect.x + simulation_time_tip_text->rect.w + 8, simulation_time_tip_text->rect.y + simulation_time_tip_text->rect.h / 2);
+    mark_update();
+    task_over = false;
 }
 
 /**
@@ -647,15 +708,119 @@ void reset_simulation(void)
  */
 void random_task(void)
 {
-
+    for (int i = 0; i < 18; i++)
+    {
+        ConnectorList[i].task_list.clear();
+        ConnectorList[i].state = ConnectorState::ConnectorIdle;
+        ConnectorList[i].time_temp = 0;
+    }
+    CarTask task;
+    GenerateRandomTask(task);
+    task.id = 1;
+    ConnectorList[task.start_connector].task_list.push_back(task);
+    int start_connector1 = task.start_connector;
+    do
+    {
+        GenerateRandomTask(task);
+        task.id = 2;
+    } while (task.start_connector == start_connector1);
+    ConnectorList[task.start_connector].task_list.push_back(task);
+    int start_connector2 = task.start_connector;
+    do
+    {
+        GenerateRandomTask(task);
+        task.id = 3;
+    } while (task.start_connector == start_connector1 || task.start_connector == start_connector2);
+    ConnectorList[task.start_connector].task_list.push_back(task);
+    for (int i = 0; i < 18; i++)
+    {
+        if (!ConnectorList[i].task_list.empty())
+        {
+            ConnectorList[i].state = ConnectorState::WorkWithOther;
+            ConnectorList[i].time_temp = ConnectorList[i].get_load_time();
+        }
+    }
+    task_over = false;
+    for (int i = 0; i < CarNum; i++)
+    {
+        CarList[i].maxspeed_stright = RandomDouble(MAXSPEED_STRIGHT / 2, MAXSPEED_STRIGHT);
+        CarList[i].maxspeed_curve = RandomDouble(MAXSPEED_CURVE / 2, MAXSPEED_CURVE);
+    }
 }
 
+/**
+ * @brief 从文件导入任务回调函数
+ */
+void SDLCALL file_task_callback(void*, const char * const *file_list, int)
+{
+    if (file_list == NULL || file_list[0] == NULL)    // 检查文件列表是否为空
+    {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "未选择文件", NULL);
+        return;
+    }
+    std::list<CarTask> tasks;
+    load_task_csv(tasks, file_list[0]);
+    for (const auto &task : tasks)
+    {
+        ConnectorList[task.start_connector].task_list.push_back(task);
+    }
+    for (int i = 0; i < 18; i++)
+    {
+        if (!ConnectorList[i].task_list.empty())
+        {
+            ConnectorList[i].state = ConnectorState::WorkWithOther;
+            ConnectorList[i].time_temp = ConnectorList[i].get_load_time();
+        }
+    }
+}
+extern std::string work_path;
 /**
  * @brief 从文件导入任务
  */
 void file_task(void)
 {
+    for (int i = 0; i < 18; i++)
+    {
+        ConnectorList[i].task_list.clear();
+        ConnectorList[i].state = ConnectorState::ConnectorIdle;
+        ConnectorList[i].time_temp = 0;
+    }
+    SDL_DialogFileFilter filter = { "任务文件", "csv" };
+    SDL_ShowOpenFileDialog(file_task_callback, NULL, NULL, &filter, 1, (work_path + "\\").c_str(), false);
+    task_over = false;
+}
 
+/**
+ * @brief 切换穿梭车数量
+ */
+void switch_car_num(void)
+{
+    SDL_Color c = rm.getColor(DARKBLUE);
+    int num = CarNum;
+    if (num == 3)
+    {
+        num = 5;
+        CIC_List[3]->join(root);
+        CIC_List[4]->join(root);
+    }
+    else if (num == 5)
+    {
+        num = 7;
+        CIC_List[5]->join(root);
+        CIC_List[6]->join(root);
+    }
+    else if (num == 7)
+    {
+        num = 3;
+        CIC_List[3]->leave();
+        CIC_List[4]->leave();
+        CIC_List[5]->leave();
+        CIC_List[6]->leave();
+    }
+    Set_CarNum(num);
+    Reset_CarPos();
+    update_car_pos();
+    car_num_button_text->set_text(std::to_string(CarNum), rm.getFont("shuhei.ttf", 32), c);
 }
 
 /**
@@ -663,8 +828,8 @@ void file_task(void)
  */
 void set_simulation_speed_1x(void)
 {
-    set_simulation_speed(1.0);
-    speed_dragbar->set_process((1.0 - 0.5) / (32 - 0.5));
+    set_simulation_speed(1);
+    speed_dragbar->set_process((1 - 0.5f) / (32 - 0.5f));
 }
 
 /**
@@ -672,8 +837,8 @@ void set_simulation_speed_1x(void)
  */
 void set_simulation_speed_4x(void)
 {
-    set_simulation_speed(4.0);
-    speed_dragbar->set_process((4.0 - 0.5) / (32 - 0.5));
+    set_simulation_speed(4);
+    speed_dragbar->set_process((4 - 0.5f) / (32 - 0.5f));
 }
 
 /**
@@ -681,8 +846,8 @@ void set_simulation_speed_4x(void)
  */
 void set_simulation_speed_8x(void)
 {
-    set_simulation_speed(8.0);
-    speed_dragbar->set_process((8.0 - 0.5) / (32 - 0.5));
+    set_simulation_speed(8);
+    speed_dragbar->set_process((8 - 0.5f) / (32 - 0.5f));
 }
 
 /**
@@ -690,8 +855,8 @@ void set_simulation_speed_8x(void)
  */
 void set_simulation_speed_16x(void)
 {
-    set_simulation_speed(16.0);
-    speed_dragbar->set_process((16.0 - 0.5) / (32 - 0.5));
+    set_simulation_speed(16);
+    speed_dragbar->set_process((16 - 0.5f) / (32 - 0.5f));
 }
 
 /**
@@ -701,4 +866,16 @@ void set_simulation_speed_32x(void)
 {
     set_simulation_speed(32.0);
     speed_dragbar->set_process((32.0 - 0.5) / (32 - 0.5));
+}
+
+/**
+ * @brief 检查任务是否完成
+ */
+void check_task_over_func(Uint64)
+{
+    if (task_over)
+    {
+        task_over = false;
+        // std::cout << "所有任务已完成！" << std::endl;
+    }
 }

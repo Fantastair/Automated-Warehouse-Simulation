@@ -10,6 +10,7 @@ SDL_Window *window = NULL;             // 窗口指针
 SDL_Renderer *renderer = NULL;         // 渲染器指针
 TTF_TextEngine *text_engine = NULL;    // 文本引擎指针
 bool scaled = false;                   // 是否缩放
+SDL_Rect window_rect;                  // 窗口矩形，用于获取显示器边界
 
 /**
  * @brief 初始化显示模块
@@ -19,7 +20,6 @@ void Display_Init(int w, int h, SDL_WindowFlags flags)
     SDL_Init(SDL_INIT_VIDEO);
     TTF_Init();
 
-    SDL_Rect window_rect;
     SDL_GetDisplayBounds(1, &window_rect);    // 获取显示器边界
     // std::cout << "Display bounds: " << window_rect.x << ", " << window_rect.y << ", " << window_rect.w << ", " << window_rect.h << std::endl;
     int w_, h_;
@@ -40,6 +40,7 @@ void Display_Init(int w, int h, SDL_WindowFlags flags)
         scaled = true;
     }
     SDL_CreateWindowAndRenderer(PROGRAM_NAME, w_, h_, flags, &window, &renderer);
+    // std::cout << "Window created with size: " << w_ << "x" << h_ << std::endl;
     if (w != 0 && h != 0)
     {
         SDL_SetRenderLogicalPresentation(renderer, w, h, SDL_LOGICAL_PRESENTATION_LETTERBOX);

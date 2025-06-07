@@ -34,7 +34,7 @@ void Launch_Init(void)
     root->render(0, 0);
     SDL_RenderPresent(renderer);
 
-    SDL_Delay(2500);
+    SDL_Delay(2000);
     delete root;
     root = nullptr;
     rm.Clean();

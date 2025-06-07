@@ -23,9 +23,13 @@ void simulate(void)
         system_runtime += t;                    // 更新时间戳
         if (Simulating)
         {
-            t *= simulation_speed;           // 根据仿真速度调整时间差
+            t = static_cast<Uint64>(t * simulation_speed);           // 根据仿真速度调整时间差
             simulation_time += t;            // 累加仿真时间
             update_simulation(t);            // 更新状态和数据
+        }
+        else
+        {
+            std::this_thread::sleep_for(std::chrono::nanoseconds(200000));
         }
     }
 }
@@ -55,9 +59,9 @@ float get_simulation_speed(void)
  */
 void update_simulation(Uint64 t)
 {
-    for (int i = 0; i < 18; i++)
+    for (int i = 17; i >= 0; i--)
     {
-        ConnectorList[17 - i].update(t);  // 更新接口设备状态
+        ConnectorList[i].update(t);  // 更新接口设备状态
     }
     int j = GetFreeCar()->id;
     for (int i = j; i < CarNum + j; i++)

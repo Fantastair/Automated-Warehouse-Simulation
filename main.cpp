@@ -1,3 +1,4 @@
+#include <Windows.h>
 #include <thread>
 #include <string>
 #include <iostream>
@@ -8,10 +9,11 @@ std::string work_path;    // 工作目录
 /**
  * @brief 主函数
  */
-int main(int, char**)
+// int main(int, char**)
+int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
     #ifdef MSVC_BUILD
-        work_path = std::filesystem::current_path().string() + "\\..\\..";    // 初始化工作目录
+        work_path = std::filesystem::current_path().string();    // 初始化工作目录
     #elif defined APP_NAME
         // work_path = std::filesystem::current_path().string() + "/" + APP_NAME + ".app/Contents/Resources";    // 初始化工作目录
         work_path = std::filesystem::current_path().string();    // 初始化工作目录

@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.10.0)
-project(AMS VERSION 1.0.1 LANGUAGES C CXX)
+project(AMS VERSION 1.0.2 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 if (MSVC)
-    add_compile_options(/W4 /permissive-)
+    add_compile_options(/W4)
     add_compile_options(/utf-8)
     add_compile_definitions(MSVC_BUILD)
 else()
@@ -80,11 +80,11 @@ target_compile_definitions(${TARGET}
     APP_NAME="${TARGET}"
     )
 
-# target_link_options(
-#     ${TARGET}
-#     PRIVATE
-#     # "/SUBSYSTEM:WINDOWS"
-# )
+target_link_options(
+    ${TARGET}
+    PRIVATE
+    "/SUBSYSTEM:WINDOWS"
+)
 
 target_link_libraries(
     ${TARGET}

@@ -5,6 +5,9 @@
 
 #define ZOOM_FACTOR 0.04f    // 缩放因子
 
+extern float left_limit;
+extern float right_limit;
+
 class CarUi : public Ui
 {
 public:
@@ -29,6 +32,9 @@ public:
 
 extern CarUi *carui_list[7];
 extern CarInfoBar *CIC_List[7];
+extern std::list<std::string> message_list;
+extern double last_speeds[7];
+extern CarRunState last_run_states[7];
 
 class ConnectorUi : public RectUi
 {
@@ -76,5 +82,7 @@ void set_simulation_speed_16x(void);
 void set_simulation_speed_32x(void);
 
 void check_task_over_func(Uint64);
+
+void check_speed_func(Uint64);
 
 #endif

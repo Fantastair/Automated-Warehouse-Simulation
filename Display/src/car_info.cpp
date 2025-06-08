@@ -61,25 +61,7 @@ CarInfoBar::~CarInfoBar(void)
 void CarInfoBar::render(float left, float top)
 {
     SDL_Color c = rm.getColor(DARKBLUE);
-    std::string speed_str = std::to_string(CarList[num].speed * 1e6 * 60);
-    // 保留一位小数
-    if (speed_str.find('.') == std::string::npos)
-    {
-        speed_str += ".0"; // 如果没有小数点，添加一位小数
-    }
-    else
-    {
-        size_t dot_pos = speed_str.find('.');
-        if (dot_pos + 2 == speed_str.size())
-        {
-            speed_str += "0"; // 如果小数点后只有一位，添加一位
-        }
-        else if (dot_pos + 3 < speed_str.size())
-        {
-            speed_str = speed_str.substr(0, dot_pos + 3); // 保留两位小数
-        }
-    }
-    speed_text->set_text(speed_str, rm.getFont("deyi.ttf", 31), c);
+    speed_text->set_text(speed_mmns_to_mmin(CarList[num].speed), rm.getFont("deyi.ttf", 31), c);
     RectUi::render(left, top);
 
     if (CarList[num].task.start_connector != -1)
@@ -389,13 +371,18 @@ void ConnectorInfoCard::follow_mouse(void)
 {
     float x, y;
     SDL_GetMouseState(&x, &y);
+    if (scaled)
+    {
+        x *= 1.5;
+        y *= 1.5;
+    }
     if (x < WIDTH) { x = WIDTH; }
     if (y + HEIGHT > WINDOW_HEIGHT) { y = WINDOW_HEIGHT - HEIGHT; }
     this->set_rect_topright(x, y);
 }
 
-ConnectorUiMouseWidget::ConnectorUiMouseWidget(ConnectorUi *connectorui_) : MouseBaseWidget(connectorui_), connectorui(connectorui_) {}
-ConnectorUiMouseWidget::ConnectorUiMouseWidget(ConnectorUi &connectorui_) : MouseBaseWidget(connectorui_), connectorui(&connectorui_) {}
+ConnectorUiMouseWidget::ConnectorUiMouseWidget(ConnectorUi *connectorui_) : MouseBaseWidget(connectorui_), connectorui(connectorui_), press_x(-10000), press_left(-10000) {}
+ConnectorUiMouseWidget::ConnectorUiMouseWidget(ConnectorUi &connectorui_) : MouseBaseWidget(connectorui_), connectorui(&connectorui_), press_x(-10000), press_left(-10000) {}
 ConnectorUiMouseWidget::~ConnectorUiMouseWidget(void) {}
 
 /**
@@ -418,7 +405,7 @@ void ConnectorUiMouseWidget::mouseout(void)
 /**
  * @brief 鼠标按下事件处理
  */
-void ConnectorUiMouseWidget::mousepress(float, float, Uint8 button)
+void ConnectorUiMouseWidget::mousepress(float x, float, Uint8 button)
 {
     if (button != SDL_BUTTON_LEFT) { return; }
     if (12 <= connectorui->index && !Simulating)
@@ -426,6 +413,8 @@ void ConnectorUiMouseWidget::mousepress(float, float, Uint8 button)
         if (mousedown == button && mouseon)
         {
             connectorui->card->leave();
+            press_x = x;
+            press_left = connectorui->rect.x;
         }
     }
 }
@@ -443,13 +432,21 @@ void ConnectorUiMouseWidget::mouserelease(float, float, Uint8 button)
             connectorui->card->join(root);
             connectorui->card->follow_mouse();
         }
+        if (press_x != -10000) { press_x = -10000; }
     }
 }
 
 /**
  * @brief 鼠标移动事件处理
  */
-void ConnectorUiMouseWidget::mousemove(float, float)
+void ConnectorUiMouseWidget::mousemove(float x, float)
 {
     connectorui->card->follow_mouse();
+    if (press_x != -10000)
+    {
+        float left = std::min(std::max(press_left + x - press_x, left_limit), right_limit - ConnectorUi::WIDTH);
+        connectorui->set_rect_left(left);
+        ConnectorPos[connectorui->index] = TrackSplit[2] + (TrackSplit[3] - TrackSplit[2]) * (right_limit - ConnectorUi::WIDTH - left + ConnectorUi::WIDTH / 2) / (right_limit - left_limit);
+        ConnectorList[connectorui->index].position = ConnectorPos[connectorui->index];
+    }
 }

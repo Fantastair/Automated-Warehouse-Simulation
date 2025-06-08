@@ -179,3 +179,31 @@ void load_task_csv(std::list<CarTask> &task_list, const std::string &file_path)
         task_list.push_back(task);
     }
 }
+
+/**
+ * @brief 将毫米/纳秒速度转换为米/分钟速度
+ * @param speed_mmns 毫米/纳秒速度
+ * @return 返回转换后的米/分钟速度
+ */
+std::string speed_mmns_to_mmin(double speed_mmns)
+{
+    std::string speed_str = std::to_string(speed_mmns * 1e6 * 60);
+    // 保留一位小数
+    if (speed_str.find('.') == std::string::npos)
+    {
+        speed_str += ".0"; // 如果没有小数点，添加一位小数
+    }
+    else
+    {
+        size_t dot_pos = speed_str.find('.');
+        if (dot_pos + 2 == speed_str.size())
+        {
+            speed_str += "0"; // 如果小数点后只有一位，添加一位
+        }
+        else if (dot_pos + 3 < speed_str.size())
+        {
+            speed_str = speed_str.substr(0, dot_pos + 3); // 保留两位小数
+        }
+    }
+    return speed_str;
+}

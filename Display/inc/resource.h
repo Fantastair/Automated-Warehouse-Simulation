@@ -10,8 +10,13 @@
  */
 class ResourceManager
 {
-    const std::string IMAGE_PATH = "/res/image/";          // 图像路径
-    const std::string FONT_PATH = "/res/font/";            // 字体路径
+    #ifdef MSVC_BUILD
+        const std::string IMAGE_PATH = "/res/image/";          // 图像路径
+        const std::string FONT_PATH = "/res/font/";            // 字体路径
+    #else
+        const std::string IMAGE_PATH = "/../Resources/res/image/";          // 图像路径
+        const std::string FONT_PATH = "/../Resources/res/font/";            // 字体路径
+    #endif
     std::unordered_map<std::string, SDL_Texture*> textures_;    // 图像字典
     std::unordered_map<std::string, TTF_Font*> fonts_;          // 字体字典
     std::unordered_map<std::string, SDL_Color> colors_;         // 颜色字典

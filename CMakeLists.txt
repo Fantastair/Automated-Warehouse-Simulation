@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10.0)
-project(AMS VERSION 0.8.0 LANGUAGES C CXX)
+project(AMS VERSION 0.9.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -35,6 +35,7 @@ endif()
 
 set(TARGET ${PROJECT_NAME}-${CMAKE_SYSTEM_NAME}-${CMAKE_PROJECT_VERSION})
 
+
 file(GLOB 
     DISPLAY_SOURCES
     "Display/src/*.cpp"
@@ -55,15 +56,29 @@ if (MSVC)
         ${Core_SOURCES}
     )
 else()
+    set(CMAKE_MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/info.plist.in)
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/icon.icns PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
     add_executable(${TARGET}
-    # MACOSX_BUNDLE
+    MACOSX_BUNDLE
     main.cpp
-    info.rc
-
+    icon.icns
+    res/
+    
     ${DISPLAY_SOURCES}
     ${Core_SOURCES}
     )
+    add_custom_command(TARGET ${TARGET} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/res
+    $<TARGET_FILE_DIR:${TARGET}>/../Resources/res
+    )
 endif()
+
+
+target_compile_definitions(${TARGET}
+    PRIVATE
+    APP_NAME="${TARGET}"
+    )
 
 # target_link_options(
 #     ${TARGET}

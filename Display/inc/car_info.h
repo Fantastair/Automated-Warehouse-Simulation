@@ -98,6 +98,8 @@ class ConnectorUiMouseWidget : public MouseBaseWidget
 {
 public:
     ConnectorUi *connectorui;    // 连接器UI指针
+    float press_x;               // 鼠标按下位置
+    float press_left;            // 鼠标按下左边距
 
     ConnectorUiMouseWidget(ConnectorUi *connectorui_);
     ConnectorUiMouseWidget(ConnectorUi &connectorui_);
@@ -105,9 +107,9 @@ public:
 
     virtual void mousein(void);
     virtual void mouseout(void);
-    virtual void mousepress(float x, float y, Uint8 button);
-    virtual void mouserelease(float x, float y, Uint8 button);
-    virtual void mousemove(float, float);
+    virtual void mousepress(float x, float, Uint8 button);
+    virtual void mouserelease(float, float, Uint8 button);
+    virtual void mousemove(float x, float);
 };
 
 #endif

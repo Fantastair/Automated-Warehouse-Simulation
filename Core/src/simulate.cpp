@@ -61,12 +61,15 @@ void update_simulation(Uint64 t)
 {
     for (int i = 17; i >= 0; i--)
     {
-        ConnectorList[i].update(t);  // 更新接口设备状态
+        ConnectorList[i].update(t);       // 更新接口设备状态
     }
+
+    call_car();                           // 调度穿梭车
+
     int j = GetFreeCar()->id;
     for (int i = j; i < CarNum + j; i++)
     {
-        CarList[i % CarNum].update(t);  // 更新车辆状态
+        CarList[i % CarNum].update(t);    // 更新车辆状态
     }
 }
 

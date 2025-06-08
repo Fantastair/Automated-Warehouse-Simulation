@@ -12,12 +12,13 @@ int main(int, char**)
 {
     #ifdef MSVC_BUILD
         work_path = std::filesystem::current_path().string() + "\\..\\..";    // 初始化工作目录
-    #else
-        work_path = std::filesystem::current_path().string() + "/..";    // 初始化工作目录
+    #elif defined APP_NAME
+        // work_path = std::filesystem::current_path().string() + "/" + APP_NAME + ".app/Contents/Resources";    // 初始化工作目录
+        work_path = std::filesystem::current_path().string();    // 初始化工作目录
     #endif
-    // std::cout << "Current working directory: " << work_path << std::endl;
+    std::cout << "Current working directory: " << work_path << std::endl;
     RandomInit();                                            // 初始化随机数生成器
-    
+
     // Launch_Init();    // 启动界面初始化
 
     DataClass_Init();                                     // 初始化底层数据类

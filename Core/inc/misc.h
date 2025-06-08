@@ -21,4 +21,6 @@ std::string NS2String(Uint64 ns);
 
 void load_task_csv(std::list<CarTask> &task_list, const std::string &file_path);
 
+std::string speed_mmns_to_mmin(double speed_mmns);
+
 #endif

@@ -8,6 +8,7 @@
 #define WINDOW_WIDTH 1920     // 窗口宽度
 #define WINDOW_HEIGHT 1080    // 窗口高度
 #define FPS_ 60               // 帧率
+extern bool scaled;
 
 extern SDL_Window *window;
 extern SDL_Renderer *renderer;

@@ -11,6 +11,7 @@ SDL_Renderer *renderer = NULL;         // 渲染器指针
 TTF_TextEngine *text_engine = NULL;    // 文本引擎指针
 bool scaled = false;                   // 是否缩放
 SDL_Rect window_rect;                  // 窗口矩形，用于获取显示器边界
+extern std::string work_path;               // 工作目录
 
 /**
  * @brief 初始化显示模块
@@ -51,7 +52,7 @@ void Display_Init(int w, int h, SDL_WindowFlags flags)
     }
     text_engine = TTF_CreateRendererTextEngine(renderer);
 
-    SDL_SetWindowIcon(window, IMG_Load("res/icon.png"));
+    SDL_SetWindowIcon(window, IMG_Load((work_path + "/res/image/icon.png").c_str()));
 }
 
 /**

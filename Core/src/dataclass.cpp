@@ -1,5 +1,6 @@
 #include <list>
 #include <cmath>
+#include <vector>
 #include <iostream>
 
 #include "../../SDL3.h"
@@ -107,7 +108,14 @@ void Set_CarNum(int num)
  */
 void Reset_CarPos(void)
 {
-    CarList[0].position = ConnectorPos[14];
+    if (CarList[0].initial_pos == 0)
+    {
+        CarList[0].position = ConnectorPos[14];
+    }
+    else
+    {
+        CarList[0].position = CarList[0].initial_pos;
+    }
     for (int i = 1; i < CarNum; i++)
     {
         CarList[i].position = CarList[i-1].position - CARLENGTH - MINDISTANCE;
@@ -138,7 +146,7 @@ int GetTrackIndex(double pos)
 /**
  * @brief 穿梭车构造函数
  */
-ShuttleCar::ShuttleCar(int id_) : id(id_) , state(CarState::CarIdle), speed(0), position(0), task({-1, -1, -1}), front(nullptr), back(nullptr), time_temp(0), maxspeed_stright(MAXSPEED_STRIGHT), maxspeed_curve(MAXSPEED_CURVE),
+ShuttleCar::ShuttleCar(int id_) : id(id_), state(CarState::CarIdle), state_temp(CarState::CarIdle), speed(0), position(0), initial_pos(0), task({-1, -1, -1, -1}), front(nullptr), back(nullptr), time_temp(0), maxspeed_stright(MAXSPEED_STRIGHT), maxspeed_curve(MAXSPEED_CURVE),
     CarIdleTime(0), CarToGetTime(0), CarGettingTime(0), CarToPutTime(0), CarWaitToPutTime(0), CarPuttingTime(0), CarInitTime(0), CarWaitingTime(0),
     CarStopCount(0), run_state(CarRunState::CarUniform), in_task_count(0), out_task_count(0) {}
 
@@ -364,7 +372,9 @@ void ShuttleCar::move_to_pos_dt(double pos, Uint64 dt)
     // 是否接近前方车辆
     bool close_front = (speed >= front->speed && get_free_distance() <= min_break_distance(speed, front->speed));
     // 是否超出最大速度
-    bool over_speed = (self_track % 2 == 0 && abs(speed - maxspeed_stright) < 1e-9) || (self_track % 2 == 1 && abs(speed - maxspeed_curve) < 1e-9);
+    bool over_speed = (self_track % 2 == 0 && speed - maxspeed_stright > ACCELERATION * dt) || (self_track % 2 == 1 && speed - maxspeed_curve > ACCELERATION * dt);
+    // 是否低于最大速度
+    bool low_speed = (self_track % 2 == 0 && maxspeed_stright - speed > ACCELERATION * dt) || (self_track % 2 == 1 && maxspeed_curve - speed > ACCELERATION * dt);
 
     if (close_target || close_curve || close_front || over_speed)    // 需要减速
     {
@@ -385,7 +395,7 @@ void ShuttleCar::move_to_pos_dt(double pos, Uint64 dt)
             }
         }
     }
-    else if ((self_track % 2 == 0 && speed < maxspeed_stright) || (self_track % 2 == 1 && speed < maxspeed_curve))    // 可以加速
+    else if (low_speed)    // 可以加速
     {
         position += min_break_distance(speed + ACCELERATION * dt, speed);
         speed += ACCELERATION * dt;
@@ -465,7 +475,6 @@ void Connector::update(Uint64 dt)
 {
     switch (state)
     {
-    ShuttleCar* free_car;
     case ConnectorState::ConnectorIdle:
         ConnectorIdleTime += dt;
         if ((type == ConnectorType::StorationToCar || type == ConnectorType::PersonToCar) && !task_list.empty())    // 如果有任务
@@ -518,17 +527,6 @@ void Connector::update(Uint64 dt)
         break;
     case ConnectorState::CallingCar:
         ConnectorCallingCarTime += dt;
-        free_car = GetFreeCar(id);
-        if (free_car != nullptr)    // 如果有空闲穿梭车
-        {
-            free_car->task = task_list.front();
-            free_car->state = CarState::CarToGet;
-            if (free_car->task.task_type == 0) { free_car->in_task_count++; }
-            else if (free_car->task.task_type == 1) { free_car->out_task_count++; }
-            // std::cout << "Car " << free_car->id << " switch to CarToGet state, task: " << free_car->task.start_connector << " -> " << free_car->task.end_connector << std::endl;
-            state = ConnectorState::WaitForCar;
-            // std::cout << "Connector " << id << " switch to WaitForCar state, call Car " << free_car->id << " to do task: " << free_car->task.start_connector << " -> " << free_car->task.end_connector << std::endl;
-        }
         break;
     default:
         break;
@@ -615,3 +613,129 @@ bool isAllCarIdle(void)
     }
     return true;
 }
+
+/**
+ * @brief 调度穿梭车
+ */
+void call_car(void)
+{
+    // 步骤1: 收集所有需要服务的接口
+    std::vector<int> calling_connectors;
+    for (int i = 0; i < 18; i++) {
+        if (ConnectorList[i].state == ConnectorState::CallingCar) {
+            calling_connectors.push_back(i);
+        }
+    }
+    if (calling_connectors.empty()) return;
+
+    // 步骤2: 评估任务优先级（入库任务优先）
+    auto task_priority = [](const CarTask& task) {
+        // 入库任务（CarToStoration）优先处理
+        if (task.task_type == 0) return 3; 
+        // 出库口任务（CarToPerson）次优先
+        if (task.end_connector >= 12 && task.end_connector <= 14) return 2;
+        return 1;  // 其他任务
+    };
+
+    // 步骤3: 时空成本评估函数
+    auto evaluate_cost = [](int connector_id, ShuttleCar* car) {
+        // 计算时空距离 = 实际距离 × 拥堵系数
+        double direct_dist = fmod(ConnectorPos[connector_id] - car->position + TrackSplit[4], TrackSplit[4]);
+        
+        // 拥堵系数：弯道区域增加成本
+        int track_idx = GetTrackIndex(car->position);
+        double congestion_factor = (track_idx % 2 == 1) ? 1.8 : 1.0;  // 弯道成本增加80%
+        
+        // 车辆状态成本：正在执行任务的车辆增加调度成本
+        double state_factor = (car->state != CarState::CarIdle) ? 1.5 : 1.0;
+        
+        return direct_dist * congestion_factor * state_factor;
+    };
+
+    // 步骤4: 区域负载均衡（将轨道划分为4个区域）
+    const int ZONE_COUNT = 4;
+    std::vector<int> zone_vehicle_count(ZONE_COUNT, 0);
+    
+    // 统计各区域当前车辆数
+    for (int c = 0; c < CarNum; c++) {
+        int track_idx = GetTrackIndex(CarList[c].position);
+        int zone = track_idx % ZONE_COUNT;
+        zone_vehicle_count[zone]++;
+    }
+
+    // 步骤5: 智能任务分配
+    for (int i : calling_connectors) {
+        Connector& connector = ConnectorList[i];
+        CarTask task = connector.task_list.front();
+        
+        ShuttleCar* best_car = nullptr;
+        double min_cost = std::numeric_limits<double>::max();
+        int task_priority_level = task_priority(task);
+
+        // 寻找最优车辆
+        for (int c = 0; c < CarNum; c++) {
+            ShuttleCar* car = &CarList[c];
+            
+            // 排除非空闲且非可调度状态的车辆
+            if (car->state != CarState::CarIdle && 
+                car->state != CarState::CarToPut) {
+                continue;
+            }
+            
+            // 区域负载均衡因子：优先选择服务不足区域的车辆
+            int car_zone = GetTrackIndex(car->position) % ZONE_COUNT;
+            int connector_zone = GetTrackIndex(ConnectorPos[i]) % ZONE_COUNT;
+            double zone_factor = (car_zone == connector_zone) ? 0.8 : 1.2;
+            
+            // 综合成本评估
+            double cost = evaluate_cost(i, car) * zone_factor;
+            
+            // 任务优先级加成（高优先级任务可接受稍高成本）
+            if (task_priority_level > 1) {
+                cost /= task_priority_level;
+            }
+            
+            // 更新最优车辆
+            if (cost < min_cost) {
+                min_cost = cost;
+                best_car = car;
+            }
+        }
+
+        // 分配任务给最优车辆
+        if (best_car != nullptr) {
+            best_car->task = task;
+            best_car->state = CarState::CarToGet;
+            
+            // 更新任务统计
+            if (task.task_type == 0) best_car->in_task_count++;
+            else if (task.task_type == 1) best_car->out_task_count++;
+            
+            // 更新接口状态
+            connector.state = ConnectorState::WaitForCar;
+            
+            // 更新区域车辆计数
+            int zone = GetTrackIndex(best_car->position) % ZONE_COUNT;
+            zone_vehicle_count[zone]--;
+            zone_vehicle_count[GetTrackIndex(ConnectorPos[i]) % ZONE_COUNT]++;
+        }
+    }
+}
+// {
+//     for (int i = 0; i < 18; i++)
+//     {
+//         if (ConnectorList[i].state == ConnectorState::CallingCar)
+//         {
+//             ShuttleCar* free_car;
+//             free_car = GetFreeCar(ConnectorList[i].id);
+//             if (free_car != nullptr)    // 如果有空闲穿梭车
+//             {
+//                 free_car->task = ConnectorList[i].task_list.front();
+//                 free_car->state = CarState::CarToGet;
+//                 if (free_car->task.task_type == 0) { free_car->in_task_count++; }
+//                 else if (free_car->task.task_type == 1) { free_car->out_task_count++; }
+//                 ConnectorList[i].state = ConnectorState::WaitForCar;
+//             }
+//         }
+//     }
+// }

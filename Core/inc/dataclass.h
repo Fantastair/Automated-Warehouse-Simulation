@@ -22,7 +22,7 @@
 #define ACCELERATION        5e-16                 // 最大加（减）速度，mm/ns^2
 #define CARLENGTH           2000                  // 车辆长度，mm
 #define MINDISTANCE         200                   // 前后车最小间距，考虑车身长度，mm
-#define MINDISTANCE_CURVE   600                   // 弯道上前后车最小间距，考虑车身长度，mm
+#define MINDISTANCE_CURVE   400                   // 弯道上前后车最小间距，考虑车身长度，mm
 #define LOADTIME            ((Uint64)7.5e9)       // 穿梭车与接口设备交接货物时间，纳秒
 // 接口参数
 #define SC_LOAD_TIME    ((Uint64)50e9)    // 出库接口设备出货时间，ns
@@ -88,6 +88,7 @@ void Reset_CarPos(void);
 int GetTrackIndex(double pos);
 bool isAllConnectorIdle(void);
 bool isAllCarIdle(void);
+void call_car(void);
 
 /**
  * @brief 穿梭车

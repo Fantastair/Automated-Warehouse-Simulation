@@ -25,7 +25,7 @@ void Launch_Init(void)
     line->set_rect_midleft(150, icon->rect.y + 60);
     line->join(root);
     TextUi *subtitle1 = new TextUi("山东大学 控制学院第七届学以致用", rm.getFont("shuhei.ttf", 24), rm.getColor(DARKBLUE));
-    TextUi *subtitle2 = new TextUi("2025 编程能力大赛作品", rm.getFont("shuhei.ttf", 24), rm.getColor(DARKBLUE));
+    TextUi *subtitle2 = new TextUi("2025 编程能力大赛作品 --- 队名：鲁A跑不快", rm.getFont("shuhei.ttf", 24), rm.getColor(DARKBLUE));
     subtitle1->set_rect_midleft(150, icon->rect.y + 84);
     subtitle1->join(root);
     subtitle2->set_rect_midleft(150, icon->rect.y + 108);

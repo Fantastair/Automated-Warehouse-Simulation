@@ -33,6 +33,7 @@ public:
 extern CarUi *carui_list[7];
 extern CarInfoBar *CIC_List[7];
 extern std::list<std::string> message_list;
+extern std::list<CarTask> task_list_;
 extern double last_speeds[7];
 extern CarRunState last_run_states[7];
 
@@ -83,6 +84,6 @@ void set_simulation_speed_32x(void);
 
 void check_task_over_func(Uint64);
 
-void check_speed_func(Uint64);
+// void check_speed_func(Uint64);
 
 #endif

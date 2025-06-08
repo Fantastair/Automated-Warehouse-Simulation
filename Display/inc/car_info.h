@@ -79,11 +79,12 @@ public:
 
     int num;    // 连接器编号
 
-    TextUi *id_text;           // 连接器编号文本
-    TextUi *type_text;         // 连接器类型文本
-    TextUi *state_text;        // 连接器状态文本
-    TextUi *load_time_text;    // 连接器装载时间文本
-    TextUi *idle_time_text;    // 连接器空闲时间文本
+    TextUi *id_text;            // 连接器编号文本
+    TextUi *type_text;          // 连接器类型文本
+    TextUi *state_text;         // 连接器状态文本
+    TextUi *load_time_text;     // 连接器装载时间文本
+    TextUi *idle_time_text;     // 连接器空闲时间文本
+    TextUi *task_count_text;    // 连接器剩余任务计数文本
 
     ConnectorInfoCard(int num_);
     ~ConnectorInfoCard(void);

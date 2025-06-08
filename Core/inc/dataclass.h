@@ -36,6 +36,7 @@ enum class CarState    // 车辆状态
 {
     CarIdle = 0,     // 空闲
     CarToGet,        // 前往取货点
+    CarWaitToGet,    // 等待获取货物
     CarGetting,      // 正在获取货物
     CarToPut,        // 前往收货点
     CarWaitToPut,    // 等待放置货物
@@ -73,7 +74,12 @@ typedef struct
     int start_connector;    // 起始接口索引，-1 表示无任务
     int end_connector;      // 结束接口索引，-1 表示无任务
     int task_type;          // 任务类型，0 表示入库，1 表示出库，-1 表示无任务
-    int id;            // 任务 ID，-1 表示无任务
+    int id;                 // 任务 ID，-1 表示无任务
+    int car_id;             // 车辆 ID，-1 表示无任务
+    Uint64 start_time;      // 任务开始时间，纳秒
+    Uint64 end_time;        // 任务结束时间，纳秒
+    Uint64 get_time;        // 获取货物时间，纳秒
+    Uint64 put_time;        // 放置货物时间，纳秒
 } CarTask;    // 车辆任务
 
 
@@ -103,6 +109,7 @@ public:
     double position;            // 车辆位置，mm
     double initial_pos;         // 车辆初始位置，mm
     CarTask task;               // 车辆任务
+    CarTask next_task;          // 车辆下一个任务
     ShuttleCar *front;          // 前一辆车的指针
     ShuttleCar *back;           // 后一辆车的指针
     Uint64 time_temp;           // 临时时间戳，用于统计时间
@@ -111,6 +118,7 @@ public:
 
     Uint64 CarIdleTime;         // 空闲时间，纳秒
     Uint64 CarToGetTime;        // 前往取货点时间，纳秒
+    Uint64 CarWaitToGetTime;    // 等待获取货物时间，纳秒
     Uint64 CarGettingTime;      // 获取货物时间，纳秒
     Uint64 CarToPutTime;        // 前往放置点时间，纳秒
     Uint64 CarWaitToPutTime;    // 等待放置货物时间，纳秒
@@ -121,6 +129,7 @@ public:
     CarRunState run_state;      // 车辆运行状态
     int in_task_count;          // 入库任务计数
     int out_task_count;         // 出库任务计数
+    double run_distance;        // 车辆运行距离，mm
 
     ShuttleCar(int id_);
 
@@ -131,6 +140,8 @@ public:
 
     Uint64 get_CarIdleTime(void);
     Uint64 get_CarWorkTime(void);
+
+    void look_for_next_task(void);
 };
 extern ShuttleCar CarList[7];
 extern int CarNum;

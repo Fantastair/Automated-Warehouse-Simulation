@@ -241,6 +241,9 @@ void CarInfoCard::render(float left, float top)
     case CarState::CarToGet:
         state_str = "前往取货点";
         break;
+    case CarState::CarWaitToGet:
+        state_str = "等待取货";
+        break;
     case CarState::CarGetting:
         state_str = "装货";
         break;
@@ -268,7 +271,7 @@ void CarInfoCard::render(float left, float top)
 }
 
 float ConnectorInfoCard::WIDTH = 310;    // 卡片宽度
-float ConnectorInfoCard::HEIGHT = 340;    // 卡片高度
+float ConnectorInfoCard::HEIGHT = 400;    // 卡片高度
 
 ConnectorInfoCard::ConnectorInfoCard(int num_) : RectUi(WIDTH, HEIGHT, 4, rm.getColor_(LIGHTWHITE), rm.getColor_(DARKBLUE), 32), num(num_)
 {
@@ -318,6 +321,13 @@ ConnectorInfoCard::ConnectorInfoCard(int num_) : RectUi(WIDTH, HEIGHT, 4, rm.get
     idle_time_text = new TextUi("00:00:00.0", rm.getFont("deyi.ttf", 31), rm.getColor(DARKBLUE));
     idle_time_text->set_rect_midleft(idle_time_tip_text->rect.x + idle_time_tip_text->rect.w + 8, idle_time_tip_text->rect.y + idle_time_tip_text->rect.h / 2);
     idle_time_text->join(this);
+
+    TextUi *task_count_tip_text = new TextUi("剩余任务：", rm.getFont("deyi.ttf", 31), rm.getColor(DARKBLUE));
+    task_count_tip_text->set_rect_midleft(16, idle_time_text->rect.y + idle_time_text->rect.h + 48);
+    task_count_tip_text->join(this);
+    task_count_text = new TextUi(std::to_string(ConnectorList[num_].task_list.size()), rm.getFont("deyi.ttf", 31), rm.getColor(DARKBLUE));
+    task_count_text->set_rect_midleft(task_count_tip_text->rect.x + task_count_tip_text->rect.w + 8, task_count_tip_text->rect.y + task_count_tip_text->rect.h / 2);
+    task_count_text->join(this);
 }
 
 ConnectorInfoCard::~ConnectorInfoCard(void) {}
@@ -364,6 +374,10 @@ void ConnectorInfoCard::render(float left, float top)
     }
     load_time_text->set_text(NS2String(ConnectorList[num].get_work_time()), rm.getFont("deyi.ttf", 31), c);
     idle_time_text->set_text(NS2String(ConnectorList[num].get_idle_time()), rm.getFont("deyi.ttf", 31), c);
+    if (strcmp(task_count_text->text->text, std::to_string(ConnectorList[num].task_list.size()).c_str()) != 0)
+    {
+        task_count_text->set_text(std::to_string(ConnectorList[num].task_list.size()), rm.getFont("deyi.ttf", 31), c);
+    }
     RectUi::render(left, top);
 }
 

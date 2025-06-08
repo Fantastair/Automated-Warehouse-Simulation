@@ -1,5 +1,6 @@
-#include <iostream>
 #include <string>
+#include <fstream>
+#include <iostream>
 
 #include "../../Core.h"
 #include "../../SDL3.h"
@@ -627,7 +628,7 @@ void update_time_func(Uint64)
     SDL_Color c = rm.getColor(DARKBLUE);
     system_runtime_text->set_text(NS2String(system_runtime), rm.getFont("deyi.ttf", 48), c);
     system_runtime_text->set_rect_midleft(system_runtime_tip_text->rect.x + system_runtime_tip_text->rect.w + 8, system_runtime_tip_text->rect.y + system_runtime_tip_text->rect.h / 2);
-    if (Simulating)
+    if (Simulating && CarList[0].state != CarState::CarInit)
     {
         simulation_time_text->set_text(NS2String(simulation_time), rm.getFont("deyi.ttf", 48), c);
         simulation_time_text->set_rect_midleft(simulation_time_tip_text->rect.x + simulation_time_tip_text->rect.w + 8, simulation_time_tip_text->rect.y + simulation_time_tip_text->rect.h / 2);
@@ -660,6 +661,7 @@ void switch_simulation(void)
 }
 
 std::list<std::string> message_list;
+std::list<CarTask> task_list_;
 
 /**
  * @brief 重置仿真
@@ -667,6 +669,7 @@ std::list<std::string> message_list;
 void reset_simulation(void)
 {
     message_list.clear();
+    task_list_.clear();
     SDL_Color c = rm.getColor(DARKBLUE);
     Simulating = false;
     simulation_time = 0;
@@ -679,12 +682,14 @@ void reset_simulation(void)
         CarList[i].speed = 0;
         CarList[i].position = CarList[i].initial_pos;
         CarList[i].task = { -1, -1, -1, -1 };
+        CarList[i].next_task = { -1, -1, -1, -1 };
         CarList[i].time_temp = 0;
         CarList[i].maxspeed_curve = MAXSPEED_CURVE;
         CarList[i].maxspeed_stright = MAXSPEED_STRIGHT;
 
         CarList[i].CarIdleTime = 0;
         CarList[i].CarToGetTime = 0;
+        CarList[i].CarWaitToGetTime = 0;
         CarList[i].CarGettingTime = 0;
         CarList[i].CarToPutTime = 0;
         CarList[i].CarWaitToPutTime = 0;
@@ -695,6 +700,7 @@ void reset_simulation(void)
         CarList[i].run_state = CarRunState::CarUniform;
         CarList[i].in_task_count = 0;
         CarList[i].out_task_count = 0;
+        CarList[i].run_distance = 0;
     }
     for (int i = 0; i < 18; i++)
     {
@@ -889,11 +895,47 @@ void check_task_over_func(Uint64)
     {
         task_over = false;
         // std::cout << "所有任务已完成！" << std::endl;
+        std::string state_target_file = "DeviceStateLog.txt";
+        std::ofstream state_target_stream(state_target_file, std::ios::out | std::ios::trunc);
+        if (!state_target_stream.is_open())
+        {
+            std::cerr << "无法打开文件 " << state_target_file << " 进行写入！" << std::endl;
+            return;
+        }
+        state_target_stream << "时间、设备编号、货物编号、状态" << std::endl;
         for (auto &message : message_list)
         {
-            std::cout << message << std::endl;
+            state_target_stream << message << std::endl;
         }
+        state_target_stream.close();
         message_list.clear();
+        std::string task_target_file = "TaskExeLog.txt";
+        std::ofstream task_target_stream(task_target_file, std::ios::out | std::ios::trunc);
+        if (!task_target_stream.is_open())
+        {
+            std::cerr << "无法打开文件 " << task_target_file << " 进行写入！" << std::endl;
+            return;
+        }
+        task_target_stream << "任务编号、物料编号、任务类型、起始设备、目的设备、起始时间、穿梭车编号、取货完成时间、放货完成时间、货物取走时间" << std::endl;
+        for (auto &task : task_list_)
+        {
+            task_target_stream << task.id << ", "
+                               << "TP" << task.id << ", "
+                               << (task.task_type == 0 ? "入库" : "出库") << ", "
+                               << task.start_connector << ", "
+                               << task.end_connector << ", "
+                               << NS2String(task.start_time) << ", "
+                               << "CSC00" << task.car_id + 1 << ", "
+                               << NS2String(task.get_time) << ", "
+                               << NS2String(task.put_time) << ", "
+                               << NS2String(task.end_time) << std::endl;
+        }
+        task_target_stream.close();
+        task_list_.clear();
+        // for (int i = 0; i < CarNum; i++)
+        // {
+        //     std::cout << "C" << i + 1 << "无任务空闲时间：" << NS2String(CarList[i].CarIdleTime + CarList[i].CarInitTime + CarList[i].CarWaitingTime) << " 有任务无货时间：" << NS2String(CarList[i].CarToGetTime + CarList[i].CarWaitToGetTime) << " 有货时间：" << NS2String(CarList[i].CarGettingTime + CarList[i].CarToPutTime + CarList[i].CarWaitToPutTime + CarList[i].CarPuttingTime) << " 行驶路程：" << CarList[i].run_distance / 1000 << " m" << std::endl;
+        // }
     }
 }
 
@@ -910,54 +952,54 @@ CarRunState last_run_states[7] = {
 
 #define TOLERANCE 1e-9
 
-void check_speed_func(Uint64)
-{
-    for (int i = 0; i < CarNum; i++)
-    {
-        CarRunState state = last_run_states[i];
-        double last_speed = last_speeds[i];
-        std::string last_time = NS2String(GetNS());
+// void check_speed_func(Uint64)
+// {
+//     for (int i = 0; i < CarNum; i++)
+//     {
+//         CarRunState state = last_run_states[i];
+//         double last_speed = last_speeds[i];
+//         std::string last_time = NS2String(GetNS());
 
-        // 计算速度变化量
-        double speed_change = CarList[i].speed - last_speed;
+//         // 计算速度变化量
+//         double speed_change = CarList[i].speed - last_speed;
         
-        // 根据速度变化和容差确定当前动作类型
-        CarRunState current_action;
-        if (speed_change > TOLERANCE)
-        {
-            current_action = CarRunState::CarAccelerate;
-        }
-        else if (speed_change < -TOLERANCE)
-        {
-            current_action = CarRunState::CarDecelerate;
-        }
-        else
-        {
-            current_action = CarRunState::CarUniform;
-        }
+//         // 根据速度变化和容差确定当前动作类型
+//         CarRunState current_action;
+//         if (speed_change > TOLERANCE)
+//         {
+//             current_action = CarRunState::CarAccelerate;
+//         }
+//         else if (speed_change < -TOLERANCE)
+//         {
+//             current_action = CarRunState::CarDecelerate;
+//         }
+//         else
+//         {
+//             current_action = CarRunState::CarUniform;
+//         }
         
-        /* 状态转换处理 */
-        // 检测到新的加速开始（当前加速且之前不是加速）
-        if (current_action == CarRunState::CarAccelerate && state != CarRunState::CarAccelerate)
-        {
-            // std::cout << "CSC00" << i + 1 << " " << last_time << " " << "开始加速，速度：" << speed_mmns_to_mmin(last_speed) << std::endl;
-            message_list.push_back("CSC00" + std::to_string(i + 1) + " " + last_time + " 开始加速，速度：" + speed_mmns_to_mmin(last_speed));
-        } 
-        // 检测到新的减速开始（当前减速且之前不是减速）
-        else if (current_action == CarRunState::CarDecelerate && state != CarRunState::CarDecelerate)
-        {
-            // std::cout << "CSC00" << i + 1 << " " << last_time << " " << "开始减速，速度：" << speed_mmns_to_mmin(last_speed) << std::endl;
-            message_list.push_back("CSC00" + std::to_string(i + 1) + " " + last_time + " 开始减速，速度：" + speed_mmns_to_mmin(last_speed));
-        }
-        // 检测到速度保持（当前速度保持且之前不是速度保持）
-        else if (current_action == CarRunState::CarUniform && state != CarRunState::CarUniform)
-        {
-            // std::cout << "CSC00" << i + 1 << " " << last_time << " " << "匀速行驶，速度：" << speed_mmns_to_mmin(CarList[i].speed) << std::endl;
-            message_list.push_back("CSC00" + std::to_string(i + 1) + " " + last_time + " 匀速行驶，速度：" + speed_mmns_to_mmin(CarList[i].speed));
-        }
+//         /* 状态转换处理 */
+//         // 检测到新的加速开始（当前加速且之前不是加速）
+//         if (current_action == CarRunState::CarAccelerate && state != CarRunState::CarAccelerate)
+//         {
+//             // std::cout << "CSC00" << i + 1 << " " << last_time << " " << "开始加速，速度：" << speed_mmns_to_mmin(last_speed) << std::endl;
+//             message_list.push_back("CSC00" + std::to_string(i + 1) + " " + last_time + " 开始加速，速度：" + speed_mmns_to_mmin(last_speed));
+//         } 
+//         // 检测到新的减速开始（当前减速且之前不是减速）
+//         else if (current_action == CarRunState::CarDecelerate && state != CarRunState::CarDecelerate)
+//         {
+//             // std::cout << "CSC00" << i + 1 << " " << last_time << " " << "开始减速，速度：" << speed_mmns_to_mmin(last_speed) << std::endl;
+//             message_list.push_back("CSC00" + std::to_string(i + 1) + " " + last_time + " 开始减速，速度：" + speed_mmns_to_mmin(last_speed));
+//         }
+//         // 检测到速度保持（当前速度保持且之前不是速度保持）
+//         else if (current_action == CarRunState::CarUniform && state != CarRunState::CarUniform)
+//         {
+//             // std::cout << "CSC00" << i + 1 << " " << last_time << " " << "匀速行驶，速度：" << speed_mmns_to_mmin(CarList[i].speed) << std::endl;
+//             message_list.push_back("CSC00" + std::to_string(i + 1) + " " + last_time + " 匀速行驶，速度：" + speed_mmns_to_mmin(CarList[i].speed));
+//         }
         
-        // 更新状态和记录值
-        last_speeds[i] = CarList[i].speed;
-        last_run_states[i] = current_action;  // 注意：这里更新为当前动作状态
-    }
-}
+//         // 更新状态和记录值
+//         last_speeds[i] = CarList[i].speed;
+//         last_run_states[i] = current_action;  // 注意：这里更新为当前动作状态
+//     }
+// }
